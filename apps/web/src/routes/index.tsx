@@ -1,8 +1,9 @@
 import { createRoute } from '@tanstack/react-router'
-import { rootRoute } from '@/routes/__root'
+import { PlaceholderPage } from '@/components/placeholder-page'
+import { shellRoute } from '@/routes/shell'
 
 export const indexRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => shellRoute,
   path: '/',
-  component: () => <h1 className="p-4 text-xl font-semibold">Investment Tracker</h1>,
+  component: () => <PlaceholderPage title="Dashboard" />,
 })
