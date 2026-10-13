@@ -80,7 +80,13 @@ async def handle_validation_error(request: Request, exc: Exception) -> JSONRespo
 
 
 async def handle_unexpected_error(request: Request, exc: Exception) -> JSONResponse:
-    logger.error("unhandled_exception", path=request.url.path, exc_info=exc)
+    # Contextvars are already unbound here: this handler runs outside the request-id middleware.
+    logger.error(
+        "unhandled_exception",
+        path=request.url.path,
+        request_id=request.scope.get("state", {}).get("request_id", ""),
+        exc_info=exc,
+    )
     return problem_response(
         request,
         status=500,

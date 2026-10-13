@@ -25,7 +25,14 @@ def create_app(settings: Settings) -> FastAPI:
         finally:
             await engine.dispose()
 
-    app = FastAPI(title="Investment Tracker", lifespan=lifespan)
+    docs_enabled = settings.environment != "production"
+    app = FastAPI(
+        title="Investment Tracker",
+        lifespan=lifespan,
+        docs_url="/docs" if docs_enabled else None,
+        redoc_url="/redoc" if docs_enabled else None,
+        openapi_url="/openapi.json" if docs_enabled else None,
+    )
     app.state.settings = settings
     app.add_middleware(RequestIdMiddleware)
     register_exception_handlers(app)

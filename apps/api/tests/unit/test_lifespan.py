@@ -18,3 +18,8 @@ async def test_engine_uses_configured_pool(app: FastAPI) -> None:
 
         assert pool.size() == 5
         assert pool._max_overflow == 5
+
+
+async def test_engine_hides_sql_parameters(app: FastAPI) -> None:
+    async with app.router.lifespan_context(app):
+        assert app.state.engine.sync_engine.hide_parameters is True

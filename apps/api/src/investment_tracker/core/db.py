@@ -15,6 +15,7 @@ def create_engine(settings: Settings) -> AsyncEngine:
         max_overflow=5,
         pool_pre_ping=True,
         pool_recycle=300,
+        hide_parameters=True,
     )
 
 

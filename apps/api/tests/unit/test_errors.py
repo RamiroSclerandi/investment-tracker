@@ -1,7 +1,11 @@
+import json
+
 import httpx
+import pytest
 from fastapi import FastAPI
 
 from investment_tracker.core.errors import DomainError
+from investment_tracker.core.logging import configure_logging
 
 
 class InsufficientHoldingError(DomainError):
@@ -66,3 +70,18 @@ async def test_validation_error_maps_to_problem(app: FastAPI, client: httpx.Asyn
     assert response.headers["content-type"] == "application/problem+json"
     assert body["code"] == "VALIDATION_ERROR"
     assert body["request_id"] == response.headers["X-Request-ID"]
+
+
+async def test_unhandled_exception_log_carries_the_response_request_id(
+    capsys: pytest.CaptureFixture[str], app: FastAPI, client: httpx.AsyncClient
+) -> None:
+    @app.get("/boom")
+    async def boom() -> None:
+        raise RuntimeError("kaboom")
+
+    configure_logging("INFO")
+    response = await client.get("/boom")
+
+    records = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    failure = next(r for r in records if r["event"] == "unhandled_exception")
+    assert failure["request_id"] == response.headers["X-Request-ID"]
