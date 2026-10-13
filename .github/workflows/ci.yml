@@ -13,6 +13,7 @@ concurrency:
 
 jobs:
   pr-title:
+    name: PR title lint (conventional commits)
     runs-on: ubuntu-latest
     steps:
       - name: Check Conventional Commits title
