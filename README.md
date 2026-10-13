@@ -22,6 +22,17 @@ uv run ruff check . && uv run ruff format --check . && uv run mypy .
 DATABASE_URL=... uv run uvicorn investment_tracker.main:build_app --factory --reload
 ```
 
+## Tests
+
+Unit tests, lint and type checks run on the host (`uv run pytest -q -m "not integration"`).
+Integration tests need PostgreSQL and run inside the compose network, because published ports do not reach Windows:
+
+```bash
+podman compose --profile test run --rm api-test
+```
+
+In CI, integration tests start PostgreSQL with testcontainers when `DATABASE_URL` is unset.
+
 ## Web
 
 ```bash
