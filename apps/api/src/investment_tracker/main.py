@@ -8,6 +8,7 @@ from investment_tracker.core.errors import register_exception_handlers
 from investment_tracker.core.logging import configure_logging
 from investment_tracker.core.request_id import RequestIdMiddleware
 from investment_tracker.core.settings import Settings
+from investment_tracker.ops.router import router as ops_router
 
 API_PREFIX = "/api/v1"
 
@@ -36,7 +37,9 @@ def create_app(settings: Settings) -> FastAPI:
     app.state.settings = settings
     app.add_middleware(RequestIdMiddleware)
     register_exception_handlers(app)
-    app.include_router(APIRouter(prefix=API_PREFIX))
+    api_router = APIRouter(prefix=API_PREFIX)
+    api_router.include_router(ops_router)
+    app.include_router(api_router)
     return app
 
 
