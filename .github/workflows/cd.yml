@@ -66,6 +66,7 @@ jobs:
   deploy:
     needs: [image, migrate]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     environment: production
     steps:
       - name: Trigger the Render deploy and wait until it is live
@@ -84,7 +85,7 @@ jobs:
             exit 1
           fi
           image_param="$(jq -rn --arg v "$IMAGE_REF" '$v|@uri')"
-          response="$(curl -sS -w '\n%{http_code}' -X POST "$HOOK_URL&imgURL=$image_param")"
+          response="$(curl -sS --max-time 30 -w '\n%{http_code}' -X POST "$HOOK_URL&imgURL=$image_param")"
           code="$(tail -n1 <<<"$response")"
           deploy_id="$(head -n -1 <<<"$response" | jq -r '.deploy.id // empty' 2>/dev/null || true)"
           if [[ "$code" != "200" || -z "$deploy_id" ]]; then
@@ -92,7 +93,7 @@ jobs:
             exit 1
           fi
           for _ in $(seq 60); do
-            status="$(curl -fsS --retry 3 -H "Authorization: Bearer $RENDER_API_KEY" \
+            status="$(curl -fsS --max-time 20 --retry 3 -H "Authorization: Bearer $RENDER_API_KEY" \
               "https://api.render.com/v1/services/$service_id/deploys/$deploy_id" | jq -r '.status' || true)"
             echo "Deploy $deploy_id: ${status:-unknown}"
             case "$status" in
@@ -107,7 +108,7 @@ jobs:
           exit 1
 
   promote:
-    needs: [image, deploy]
+    needs: [image, smoke]
     runs-on: ubuntu-latest
     permissions:
       packages: write
