@@ -42,4 +42,6 @@ pnpm dev
 pnpm lint && pnpm typecheck && pnpm test && pnpm build
 ```
 
+`pnpm dev` proxies `/api` to `http://localhost:8000`. The API client is generated from the backend OpenAPI schema: run `pnpm api:generate` after changing an endpoint and commit `src/api/openapi.json` and `src/api/generated/schema.ts`; `pnpm api:check` fails when they are stale.
+
 Copy `.env.example` to `.env` and adjust the values for local development.

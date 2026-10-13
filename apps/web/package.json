@@ -12,13 +12,16 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "api:generate": "uv run --project ../api python -m investment_tracker.cli export-openapi --output src/api/openapi.json && openapi-typescript src/api/openapi.json -o src/api/generated/schema.ts",
+    "api:check": "node scripts/check-api.mjs"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",
     "@tanstack/react-query": "^5.104.2",
     "@tanstack/react-router": "^1.170.42",
     "clsx": "^2.1.1",
+    "openapi-fetch": "^0.17.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "tailwind-merge": "^3.7.0",
@@ -39,6 +42,8 @@
     "eslint-plugin-react-refresh": "^0.5.7",
     "globals": "^17.13.0",
     "jsdom": "^30.1.2",
+    "msw": "^3.0.3",
+    "openapi-typescript": "^7.13.0",
     "shadcn": "4.21.4",
     "tailwindcss": "^4.3.3",
     "typescript": "npm:@typescript/typescript6@6.0.2",
