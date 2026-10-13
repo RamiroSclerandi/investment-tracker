@@ -4,8 +4,7 @@ on:
   push:
     branches: [main]
 
-permissions:
-  contents: read
+permissions: {}
 
 concurrency:
   group: cd-production
@@ -34,12 +33,11 @@ jobs:
         run: |
           image="ghcr.io/${OWNER,,}/investment-tracker-api"
           printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
-          docker build \
+          docker build --provenance=false \
             --label "org.opencontainers.image.source=$REPOSITORY_URL" \
             --label "org.opencontainers.image.revision=$SHA" \
-            -t "$image:$SHA" -t "$image:latest" apps/api
+            -t "$image:$SHA" apps/api
           docker push "$image:$SHA"
-          docker push "$image:latest"
           ref="$(docker inspect --format '{{index .RepoDigests 0}}' "$image:$SHA")"
           echo "ref=$ref" >> "$GITHUB_OUTPUT"
           echo "Pushed $ref" >> "$GITHUB_STEP_SUMMARY"
@@ -48,9 +46,13 @@ jobs:
     needs: image
     runs-on: ubuntu-latest
     environment: production
+    permissions:
+      packages: read
     steps:
       - name: Run migrations from the pushed image
         env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
           IMAGE_REF: ${{ needs.image.outputs.ref }}
           DATABASE_URL: ${{ secrets.MIGRATIONS_DATABASE_URL }}
         run: |
@@ -58,6 +60,7 @@ jobs:
             echo "::error::Secret MIGRATIONS_DATABASE_URL is not set in the production environment."
             exit 1
           fi
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
           docker run --rm -e DATABASE_URL -e ENVIRONMENT=production "$IMAGE_REF" alembic upgrade head
 
   deploy:
@@ -75,18 +78,23 @@ jobs:
             echo "::error::Secrets RENDER_DEPLOY_HOOK_URL and RENDER_API_KEY must be set in the production environment."
             exit 1
           fi
-          service_id="$(sed -E 's#^https://api\.render\.com/deploy/(srv-[a-z0-9]+).*#\1#' <<<"$HOOK_URL")"
+          service_id="$(sed -nE 's#^https://api\.render\.com/deploy/(srv-[A-Za-z0-9]+)\?.*#\1#p' <<<"$HOOK_URL")"
+          if [[ -z "$service_id" ]]; then
+            echo "::error::RENDER_DEPLOY_HOOK_URL does not look like https://api.render.com/deploy/srv-...?key=..."
+            exit 1
+          fi
           image_param="$(jq -rn --arg v "$IMAGE_REF" '$v|@uri')"
-          response="$(curl -fsS -X POST "$HOOK_URL&imgURL=$image_param")"
-          deploy_id="$(jq -r '.deploy.id // empty' <<<"$response")"
-          if [[ -z "$deploy_id" ]]; then
-            echo "::error::Render queued the deploy behind another one and returned no deploy id."
+          response="$(curl -sS -w '\n%{http_code}' -X POST "$HOOK_URL&imgURL=$image_param")"
+          code="$(tail -n1 <<<"$response")"
+          deploy_id="$(head -n -1 <<<"$response" | jq -r '.deploy.id // empty' 2>/dev/null || true)"
+          if [[ "$code" != "200" || -z "$deploy_id" ]]; then
+            echo "::error::Render deploy hook answered HTTP $code without a deploy id (202 means another deploy is queued)."
             exit 1
           fi
           for _ in $(seq 60); do
-            status="$(curl -fsS -H "Authorization: Bearer $RENDER_API_KEY" \
-              "https://api.render.com/v1/services/$service_id/deploys/$deploy_id" | jq -r '.status')"
-            echo "Deploy $deploy_id: $status"
+            status="$(curl -fsS --retry 3 -H "Authorization: Bearer $RENDER_API_KEY" \
+              "https://api.render.com/v1/services/$service_id/deploys/$deploy_id" | jq -r '.status' || true)"
+            echo "Deploy $deploy_id: ${status:-unknown}"
             case "$status" in
               live) exit 0 ;;
               build_failed|update_failed|pre_deploy_failed|canceled|deactivated)
@@ -97,6 +105,21 @@ jobs:
           done
           echo "::error::Render deploy $deploy_id was not live after 10 minutes."
           exit 1
+
+  promote:
+    needs: [image, deploy]
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: Point the latest tag at the deployed image
+        env:
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+          IMAGE_REF: ${{ needs.image.outputs.ref }}
+        run: |
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$ACTOR" --password-stdin
+          docker buildx imagetools create --tag "${IMAGE_REF%@*}:latest" "$IMAGE_REF"
 
   smoke:
     needs: deploy
@@ -111,12 +134,14 @@ jobs:
             exit 1
           fi
           for _ in $(seq 30); do
-            body="$(curl -sS --max-time 20 "$WEB_URL/api/v1/healthz" || true)"
-            if [[ "$(jq -r '.status // empty' <<<"$body" 2>/dev/null)" == "ok" ]]; then
+            response="$(curl -sS --max-time 20 -w '\n%{http_code}' "$WEB_URL/api/v1/healthz" || true)"
+            code="$(tail -n1 <<<"$response")"
+            status="$(head -n -1 <<<"$response" | jq -r '.status // empty' 2>/dev/null || true)"
+            if [[ "$code" == "200" && "$status" == "ok" ]]; then
               echo "Smoke test passed."
               exit 0
             fi
             sleep 10
           done
-          echo "::error::$WEB_URL/api/v1/healthz did not return {\"status\":\"ok\"} within 5 minutes."
+          echo "::error::$WEB_URL/api/v1/healthz did not return 200 {\"status\":\"ok\"} within 5 minutes."
           exit 1
