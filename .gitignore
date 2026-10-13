@@ -1,6 +1,7 @@
 ODD/
 .claude/
 .codegraph/
+.atl/
 
 # Environment
 .env
