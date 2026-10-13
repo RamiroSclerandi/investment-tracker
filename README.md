@@ -1,0 +1,34 @@
+# Investment Tracker
+
+Personal portfolio tracker for crypto and Argentine market assets, with live valuation and P&L in ARS or USD (MEP).
+
+## Layout
+
+- `apps/api` — FastAPI backend (Python 3.14, uv)
+- `apps/web` — React SPA (Vite, TypeScript, pnpm)
+
+## Requirements
+
+- Python 3.14.4 and [uv](https://docs.astral.sh/uv/)
+- Node 24 and pnpm 12
+
+## API
+
+```bash
+cd apps/api
+uv sync
+uv run pytest -q
+uv run ruff check . && uv run ruff format --check . && uv run mypy .
+DATABASE_URL=... uv run uvicorn investment_tracker.main:build_app --factory --reload
+```
+
+## Web
+
+```bash
+cd apps/web
+pnpm install
+pnpm dev
+pnpm lint && pnpm typecheck && pnpm test && pnpm build
+```
+
+Copy `.env.example` to `.env` and adjust the values for local development.
