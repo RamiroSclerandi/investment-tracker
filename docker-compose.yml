@@ -4,7 +4,7 @@ services:
     image: postgres:${POSTGRES_VERSION:-17}
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-app}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env (see .env.example)}
       POSTGRES_DB: ${POSTGRES_DB:-investment_tracker}
     volumes:
       - postgres-data:/var/lib/postgresql/data
@@ -23,7 +23,7 @@ services:
   api:
     build: ./apps/api
     environment:
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-app}@postgres:5432/${POSTGRES_DB:-investment_tracker}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env (see .env.example)}@postgres:5432/${POSTGRES_DB:-investment_tracker}
     ports:
       - "8000:8000"
     depends_on:
@@ -60,7 +60,7 @@ services:
       UV_LINK_MODE: copy
       # The image ships the latest 3.14.x it has built, which can trail the patch pinned in .python-version.
       UV_PYTHON: "3.14"
-      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-app}@postgres:5432/${POSTGRES_DB:-investment_tracker}
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env (see .env.example)}@postgres:5432/${POSTGRES_DB:-investment_tracker}
     depends_on:
       postgres:
         condition: service_healthy
