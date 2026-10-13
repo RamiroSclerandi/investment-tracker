@@ -1,0 +1,42 @@
+services:
+  postgres:
+    # The major tracks production; change POSTGRES_VERSION in .env once the version spike lands.
+    image: postgres:${POSTGRES_VERSION:-17}
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-app}
+      POSTGRES_DB: ${POSTGRES_DB:-investment_tracker}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  mailpit:
+    image: axllent/mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+  api-test:
+    image: ghcr.io/astral-sh/uv:python3.14-bookworm-slim
+    profiles: ["test"]
+    working_dir: /app
+    volumes:
+      - ./apps/api:/app
+    environment:
+      # Keeps the container venv away from the host's Windows .venv inside the bind mount.
+      UV_PROJECT_ENVIRONMENT: /opt/venv
+      UV_LINK_MODE: copy
+      # The image ships the latest 3.14.x it has built, which can trail the patch pinned in .python-version.
+      UV_PYTHON: "3.14"
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-app}@postgres:5432/${POSTGRES_DB:-investment_tracker}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "uv sync --frozen && uv run pytest -q"
+
+volumes:
+  postgres-data:
