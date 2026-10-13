@@ -45,3 +45,15 @@ pnpm lint && pnpm typecheck && pnpm test && pnpm build
 `pnpm dev` proxies `/api` to `http://localhost:8000`. The API client is generated from the backend OpenAPI schema: run `pnpm api:generate` after changing an endpoint and commit `src/api/openapi.json` and `src/api/generated/schema.ts`; `pnpm api:check` fails when they are stale.
 
 Copy `.env.example` to `.env` and adjust the values for local development.
+
+## Containers
+
+```bash
+podman compose up -d --build
+```
+
+Starts `postgres`, `mailpit`, `api` (port 8000) and `web` (nginx on port 8080, proxying `/api/` to the `api` service; override with `API_UPSTREAM`). Published ports do not reach Windows on this Podman setup, so check the services from inside the network, e.g. `podman exec investment-tracker-web-1 wget -qO- http://127.0.0.1:8080/api/v1/healthz`.
+
+## CI
+
+`.github/workflows/ci.yml` runs on pull requests: Conventional Commits title lint, api (ruff, format check, mypy, unit and testcontainers integration tests), web (eslint, tsc, vitest, build, generated-client freshness) and gitleaks.
