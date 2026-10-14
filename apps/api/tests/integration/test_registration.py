@@ -220,7 +220,7 @@ async def test_resend_verification_does_not_reveal_unknown_or_verified_accounts(
             {
                 "email": "ana@example.com",
                 "password": PASSWORD,
-                "display_name": "Ana Visit http://evil",
+                "display_name": "Ana\u2028Visit http://evil",
             },
             "display_name",
         ),

@@ -48,7 +48,7 @@
           "display_name": {
             "maxLength": 80,
             "minLength": 1,
-            "pattern": "^[^\\x00-\\x1f\\x7f]+$",
+            "pattern": "^[^\\x00-\\x1f\\x7f\\x85\\u2028\\u2029]+$",
             "title": "Display Name",
             "type": "string"
           },
