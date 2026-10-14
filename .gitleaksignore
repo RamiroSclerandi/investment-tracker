@@ -1,2 +1,3 @@
 # Type annotation in a test, not a credential: the key is generated at runtime.
 6e88c33103f9a2bde856a043cfe24d5fb6a00e78:apps/api/tests/unit/test_access_tokens.py:generic-api-key:17
+d257b643933d0af8fd148b4b598d39a73e38d911:apps/api/tests/unit/test_argon2_capacity.py:generic-api-key:14
