@@ -67,7 +67,7 @@ jobs:
   deploy:
     needs: [image, migrate]
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 40
     environment: production
     steps:
       - name: Trigger the Render deploy and wait until it is live
@@ -86,14 +86,23 @@ jobs:
             exit 1
           fi
           image_param="$(jq -rn --arg v "$IMAGE_REF" '$v|@uri')"
-          response="$(curl -sS --max-time 30 -w '\n%{http_code}' -X POST "$HOOK_URL&imgURL=$image_param")"
-          code="$(tail -n1 <<<"$response")"
-          deploy_id="$(head -n -1 <<<"$response" | jq -r '.deploy.id // empty' 2>/dev/null || true)"
-          if [[ "$code" != "200" || -z "$deploy_id" ]]; then
-            echo "::error::Render deploy hook answered HTTP $code without a deploy id (202 means another deploy is queued)."
-            exit 1
-          fi
-          wait_seconds=600
+          # 202 means another deploy is still running; retry until Render accepts ours.
+          queue_deadline=$((SECONDS + 900))
+          while true; do
+            response="$(curl -sS --max-time 30 -w '\n%{http_code}' -X POST "$HOOK_URL&imgURL=$image_param")"
+            code="$(tail -n1 <<<"$response")"
+            deploy_id="$(head -n -1 <<<"$response" | jq -r '.deploy.id // empty' 2>/dev/null || true)"
+            if [[ "$code" == "200" && -n "$deploy_id" ]]; then
+              break
+            fi
+            if [[ "$code" != "202" || SECONDS -ge queue_deadline ]]; then
+              echo "::error::Render deploy hook answered HTTP $code without a deploy id."
+              exit 1
+            fi
+            echo "Another Render deploy is in progress; retrying in 60 seconds."
+            sleep 60
+          done
+          wait_seconds=1200
           deadline=$((SECONDS + wait_seconds))
           while (( SECONDS < deadline )); do
             response="$(curl -sS --max-time 20 -w '\n%{http_code}' -H "Authorization: Bearer $RENDER_API_KEY" \
