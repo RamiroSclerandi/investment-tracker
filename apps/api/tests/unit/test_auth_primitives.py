@@ -1,7 +1,12 @@
 import hashlib
 
 from investment_tracker.auth.emails import verification_email
-from investment_tracker.auth.passwords import hash_password
+from investment_tracker.auth.passwords import (
+    hash_password,
+    hash_password_async,
+    verify_password,
+    verify_password_async,
+)
 from investment_tracker.auth.tokens import hash_token, new_token
 
 
@@ -36,3 +41,23 @@ def test_verification_email_carries_the_token_in_the_link_fragment() -> None:
     assert message.subject == "Verificá tu email"
     assert "https://app.example.com/verify-email#token=abc123" in message.text
     assert "24 horas" in message.text
+
+
+def test_verify_password_accepts_the_matching_password() -> None:
+    assert verify_password(hash_password("correct horse battery"), "correct horse battery")
+
+
+def test_verify_password_rejects_a_different_password() -> None:
+    assert not verify_password(hash_password("correct horse battery"), "wrong horse battery")
+
+
+def test_verify_password_returns_false_for_a_garbage_hash() -> None:
+    assert not verify_password("not-a-hash", "correct horse battery")
+
+
+async def test_async_password_helpers_hash_and_verify_off_the_event_loop() -> None:
+    hashed = await hash_password_async("correct horse battery")
+
+    assert hashed.startswith("$argon2id$")
+    assert await verify_password_async(hashed, "correct horse battery")
+    assert not await verify_password_async(hashed, "wrong horse battery")

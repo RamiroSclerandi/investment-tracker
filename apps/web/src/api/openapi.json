@@ -140,6 +140,12 @@
       },
       "VerifyEmailRequest": {
         "properties": {
+          "password": {
+            "maxLength": 128,
+            "minLength": 12,
+            "title": "Password",
+            "type": "string"
+          },
           "token": {
             "maxLength": 256,
             "minLength": 1,
@@ -148,7 +154,8 @@
           }
         },
         "required": [
-          "token"
+          "token",
+          "password"
         ],
         "title": "VerifyEmailRequest",
         "type": "object"

@@ -1,4 +1,4 @@
-import asyncio
+import uuid
 from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.exc import IntegrityError
@@ -7,7 +7,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from investment_tracker.auth.emails import verification_email
 from investment_tracker.auth.errors import InvalidEmailTokenError
 from investment_tracker.auth.models import EmailToken, EmailTokenPurpose, User
-from investment_tracker.auth.passwords import hash_password
+from investment_tracker.auth.passwords import (
+    DUMMY_PASSWORD_HASH,
+    hash_password_async,
+    verify_password_async,
+)
 from investment_tracker.auth.repository import EmailTokenRepository, UserRepository
 from investment_tracker.auth.tokens import hash_token, new_token
 from investment_tracker.core.email import EmailMessage
@@ -25,7 +29,7 @@ class AuthService:
 
     async def register(self, email: str, password: str, display_name: str) -> EmailMessage | None:
         # Hashing runs on every request so response time does not reveal existing accounts.
-        password_hash = await asyncio.to_thread(hash_password, password)
+        password_hash = await hash_password_async(password)
         try:
             async with self._session.begin():
                 message = await self._register_user(email, password_hash, display_name)
@@ -34,17 +38,55 @@ class AuthService:
             return None
         return message
 
-    async def verify_email(self, raw_token: str) -> None:
-        now = datetime.now(UTC)
+    async def verify_email(self, raw_token: str, password: str) -> None:
+        token_hash = hash_token(raw_token)
+        # Argon2 runs between two short transactions so no row lock is held during it.
         async with self._session.begin():
-            token = await self._tokens.get_active_for_update(
-                hash_token(raw_token), EmailTokenPurpose.VERIFY_EMAIL, now
+            token = await self._tokens.get_active(
+                token_hash, EmailTokenPurpose.VERIFY_EMAIL, datetime.now(UTC)
             )
-            if token is None:
+            user = await self._users.get(token.user_id) if token else None
+        if user is None or not user.is_active:
+            await verify_password_async(DUMMY_PASSWORD_HASH, password)
+            raise InvalidEmailTokenError
+        known_hash = user.password_hash
+        new_hash = await self._prove_password(known_hash, password)
+        await self._apply_verification(user.id, token_hash, known_hash, new_hash)
+
+    async def _prove_password(self, password_hash: str | None, password: str) -> str | None:
+        if password_hash is None:
+            return await hash_password_async(password)
+        if not await verify_password_async(password_hash, password):
+            raise InvalidEmailTokenError
+        return None
+
+    async def _apply_verification(
+        self,
+        user_id: uuid.UUID,
+        token_hash: str,
+        known_hash: str | None,
+        new_hash: str | None,
+    ) -> None:
+        now = datetime.now(UTC)
+        # User before token: the same lock order as register and resend, so they cannot deadlock.
+        # Raising here rolls back, leaving the token unused for the real owner.
+        async with self._session.begin():
+            user = await self._users.get_for_update(user_id)
+            token = await self._tokens.get_active_for_update(
+                token_hash, EmailTokenPurpose.VERIFY_EMAIL, now
+            )
+            if (
+                user is None
+                or not user.is_active
+                or user.password_hash != known_hash
+                or token is None
+                or token.user_id != user.id
+            ):
                 raise InvalidEmailTokenError
+            if new_hash is not None:
+                user.password_hash = new_hash
             token.used_at = now
-            user = await self._users.get(token.user_id)
-            if user is not None and user.email_verified_at is None:
+            if user.email_verified_at is None:
                 user.email_verified_at = now
 
     async def resend_verification(self, email: str) -> EmailMessage | None:

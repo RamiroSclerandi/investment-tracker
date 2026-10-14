@@ -2,9 +2,13 @@ import re
 
 import httpx
 import pytest
+from fastapi import FastAPI
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from investment_tracker.auth.passwords import verify_password
+from investment_tracker.auth.service import AuthService
+from investment_tracker.core.email import EmailMessage
 from tests.integration.conftest import WEB_BASE_URL, RecordingEmailSender
 
 pytestmark = pytest.mark.integration
@@ -61,8 +65,12 @@ async def test_verify_email_marks_the_user_verified_and_the_token_is_single_use(
     await client.post("/api/v1/auth/register", json=_register_body())
     token = _token_from(emails.sent[0].text)
 
-    first = await client.post("/api/v1/auth/verify-email", json={"token": token})
-    second = await client.post("/api/v1/auth/verify-email", json={"token": token})
+    first = await client.post(
+        "/api/v1/auth/verify-email", json={"token": token, "password": PASSWORD}
+    )
+    second = await client.post(
+        "/api/v1/auth/verify-email", json={"token": token, "password": PASSWORD}
+    )
 
     assert first.status_code == 200
     assert first.json() == {"status": "verified"}
@@ -83,7 +91,9 @@ async def test_verify_email_rejects_an_expired_token(
             text("UPDATE app.email_tokens SET expires_at = now() - interval '1 second'")
         )
 
-    response = await client.post("/api/v1/auth/verify-email", json={"token": token})
+    response = await client.post(
+        "/api/v1/auth/verify-email", json={"token": token, "password": PASSWORD}
+    )
 
     assert response.status_code == 400
     assert response.json()["code"] == "INVALID_EMAIL_TOKEN"
@@ -93,10 +103,153 @@ async def test_verify_email_rejects_an_expired_token(
 
 
 async def test_verify_email_rejects_an_unknown_token(client: httpx.AsyncClient) -> None:
-    response = await client.post("/api/v1/auth/verify-email", json={"token": "nope"})
+    response = await client.post(
+        "/api/v1/auth/verify-email", json={"token": "nope", "password": PASSWORD}
+    )
 
     assert response.status_code == 400
     assert response.json()["code"] == "INVALID_EMAIL_TOKEN"
+
+
+async def test_verify_email_with_the_registered_password_verifies(
+    client: httpx.AsyncClient, emails: RecordingEmailSender, engine: AsyncEngine
+) -> None:
+    await client.post("/api/v1/auth/register", json=_register_body())
+
+    response = await client.post(
+        "/api/v1/auth/verify-email",
+        json={"token": _token_from(emails.sent[0].text), "password": PASSWORD},
+    )
+
+    assert response.status_code == 200
+    user = await _user_row(engine, "ana@example.com")
+    assert user is not None
+    assert user["email_verified_at"] is not None
+
+
+async def test_verify_email_with_a_wrong_password_fails_and_keeps_the_token_usable(
+    client: httpx.AsyncClient, emails: RecordingEmailSender, engine: AsyncEngine
+) -> None:
+    await client.post("/api/v1/auth/register", json=_register_body())
+    token = _token_from(emails.sent[0].text)
+
+    wrong = await client.post(
+        "/api/v1/auth/verify-email", json={"token": token, "password": OTHER_PASSWORD}
+    )
+    unverified = await _user_row(engine, "ana@example.com")
+    right = await client.post(
+        "/api/v1/auth/verify-email", json={"token": token, "password": PASSWORD}
+    )
+
+    assert wrong.status_code == 400
+    assert wrong.json()["code"] == "INVALID_EMAIL_TOKEN"
+    assert unverified is not None
+    assert unverified["email_verified_at"] is None
+    assert right.status_code == 200
+
+
+async def test_verify_email_sets_the_password_of_an_account_without_one(
+    client: httpx.AsyncClient, emails: RecordingEmailSender, engine: AsyncEngine
+) -> None:
+    await client.post("/api/v1/auth/register", json=_register_body())
+    await client.post("/api/v1/auth/register", json=_register_body())
+
+    response = await client.post(
+        "/api/v1/auth/verify-email",
+        json={"token": _token_from(emails.sent[-1].text), "password": OTHER_PASSWORD},
+    )
+
+    assert response.status_code == 200
+    user = await _user_row(engine, "ana@example.com")
+    assert user is not None
+    assert user["email_verified_at"] is not None
+    stored_hash = str(user["password_hash"])
+    assert stored_hash.startswith("$argon2id$")
+    assert verify_password(stored_hash, OTHER_PASSWORD)
+
+
+async def test_verify_email_rejects_an_inactive_user(
+    client: httpx.AsyncClient, emails: RecordingEmailSender, engine: AsyncEngine
+) -> None:
+    await client.post("/api/v1/auth/register", json=_register_body())
+    async with engine.begin() as connection:
+        await connection.execute(text("UPDATE app.users SET is_active = false"))
+
+    response = await client.post(
+        "/api/v1/auth/verify-email",
+        json={"token": _token_from(emails.sent[0].text), "password": PASSWORD},
+    )
+
+    assert response.status_code == 400
+    assert response.json()["code"] == "INVALID_EMAIL_TOKEN"
+    user = await _user_row(engine, "ana@example.com")
+    assert user is not None
+    assert user["email_verified_at"] is None
+
+
+async def test_a_reregistration_during_verification_invalidates_it(
+    app: FastAPI,
+    client: httpx.AsyncClient,
+    emails: RecordingEmailSender,
+    engine: AsyncEngine,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    await client.post("/api/v1/auth/register", json=_register_body())
+    token = _token_from(emails.sent[0].text)
+    original_proof = AuthService._prove_password
+    reregistrations: list[EmailMessage | None] = []
+
+    async def prove_then_reregister(
+        service: AuthService, password_hash: str | None, password: str
+    ) -> str | None:
+        result = await original_proof(service, password_hash, password)
+        async with app.state.sessionmaker() as session:
+            other = AuthService(session, app.state.settings)
+            reregistrations.append(
+                await other.register("ana@example.com", OTHER_PASSWORD, "Mallory")
+            )
+        return result
+
+    monkeypatch.setattr(AuthService, "_prove_password", prove_then_reregister)
+
+    response = await client.post(
+        "/api/v1/auth/verify-email", json={"token": token, "password": PASSWORD}
+    )
+
+    assert response.status_code == 400
+    assert response.json()["code"] == "INVALID_EMAIL_TOKEN"
+    user = await _user_row(engine, "ana@example.com")
+    assert user is not None
+    assert user["email_verified_at"] is None
+    assert user["password_hash"] is None
+    assert reregistrations[0] is not None
+
+
+async def test_verify_email_is_limited_to_ten_per_minute_per_client_ip(
+    client: httpx.AsyncClient,
+) -> None:
+    headers = {"CF-Connecting-IP": "203.0.113.9"}
+    body = {"token": "nope", "password": PASSWORD}
+    statuses = [
+        (await client.post("/api/v1/auth/verify-email", json=body, headers=headers)).status_code
+        for _ in range(11)
+    ]
+
+    assert statuses == [400] * 10 + [429]
+
+
+async def test_verify_email_rejects_a_password_shorter_than_12(
+    client: httpx.AsyncClient, emails: RecordingEmailSender
+) -> None:
+    await client.post("/api/v1/auth/register", json=_register_body())
+
+    response = await client.post(
+        "/api/v1/auth/verify-email",
+        json={"token": _token_from(emails.sent[0].text), "password": "x" * 11},
+    )
+
+    assert response.status_code == 422
+    assert any(error["loc"][-1] == "password" for error in response.json()["errors"])
 
 
 async def test_verification_tokens_expire_after_24_hours(
@@ -116,7 +269,10 @@ async def test_registering_a_verified_email_answers_the_same_and_sends_nothing(
     client: httpx.AsyncClient, emails: RecordingEmailSender, engine: AsyncEngine
 ) -> None:
     await client.post("/api/v1/auth/register", json=_register_body())
-    await client.post("/api/v1/auth/verify-email", json={"token": _token_from(emails.sent[0].text)})
+    await client.post(
+        "/api/v1/auth/verify-email",
+        json={"token": _token_from(emails.sent[0].text), "password": PASSWORD},
+    )
     before = await _user_row(engine, "ana@example.com")
 
     response = await client.post(
@@ -137,8 +293,12 @@ async def test_registering_an_unverified_email_again_replaces_the_pending_link(
     await client.post("/api/v1/auth/register", json=_register_body())
     old_token, new_token = (_token_from(message.text) for message in emails.sent)
 
-    old = await client.post("/api/v1/auth/verify-email", json={"token": old_token})
-    new = await client.post("/api/v1/auth/verify-email", json={"token": new_token})
+    old = await client.post(
+        "/api/v1/auth/verify-email", json={"token": old_token, "password": PASSWORD}
+    )
+    new = await client.post(
+        "/api/v1/auth/verify-email", json={"token": new_token, "password": PASSWORD}
+    )
 
     assert old.status_code == 400
     assert new.status_code == 200
@@ -155,7 +315,8 @@ async def test_registering_an_unverified_email_again_clears_the_password_and_kee
 
     user = await _user_row(engine, "ana@example.com")
     verify = await client.post(
-        "/api/v1/auth/verify-email", json={"token": _token_from(emails.sent[-1].text)}
+        "/api/v1/auth/verify-email",
+        json={"token": _token_from(emails.sent[-1].text), "password": PASSWORD},
     )
 
     assert user is not None
@@ -177,7 +338,8 @@ async def test_resend_verification_sends_a_fresh_link_to_unverified_users(
     assert response.json() == {"status": "accepted"}
     assert len(emails.sent) == 2
     verify = await client.post(
-        "/api/v1/auth/verify-email", json={"token": _token_from(emails.sent[1].text)}
+        "/api/v1/auth/verify-email",
+        json={"token": _token_from(emails.sent[1].text), "password": PASSWORD},
     )
     assert verify.status_code == 200
 
@@ -189,7 +351,8 @@ async def test_resend_verification_does_not_reveal_unknown_or_verified_accounts(
     if verified:
         await client.post("/api/v1/auth/register", json=_register_body())
         await client.post(
-            "/api/v1/auth/verify-email", json={"token": _token_from(emails.sent[0].text)}
+            "/api/v1/auth/verify-email",
+            json={"token": _token_from(emails.sent[0].text), "password": PASSWORD},
         )
     sent_before = len(emails.sent)
     email = "ana@example.com" if verified else "ghost@example.com"
@@ -290,7 +453,7 @@ async def test_rate_limited_responses_are_problem_json(client: httpx.AsyncClient
 async def test_a_failed_email_delivery_still_answers_accepted(
     client: httpx.AsyncClient, emails: RecordingEmailSender, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    from investment_tracker.core.email import EmailDeliveryError, EmailMessage
+    from investment_tracker.core.email import EmailDeliveryError
 
     async def fail(message: EmailMessage) -> None:
         raise EmailDeliveryError("SMTP delivery failed: ConnectionRefusedError")

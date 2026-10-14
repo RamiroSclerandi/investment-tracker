@@ -14,9 +14,12 @@ logger = structlog.get_logger()
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
+Password = Annotated[str, Field(min_length=12, max_length=128)]
+
+
 class RegisterRequest(BaseModel):
     email: EmailStr
-    password: str = Field(min_length=12, max_length=128)
+    password: Password
     display_name: Annotated[
         str,
         StringConstraints(
@@ -30,6 +33,7 @@ class RegisterRequest(BaseModel):
 
 class VerifyEmailRequest(BaseModel):
     token: str = Field(min_length=1, max_length=256)
+    password: Password
 
 
 class ResendVerificationRequest(BaseModel):
@@ -80,8 +84,11 @@ async def register(
 
 
 @router.post("/verify-email")
-async def verify_email(body: VerifyEmailRequest, service: AuthServiceDep) -> VerifiedResponse:
-    await service.verify_email(body.token)
+@limiter.limit("10/minute")
+async def verify_email(
+    request: Request, body: VerifyEmailRequest, service: AuthServiceDep
+) -> VerifiedResponse:
+    await service.verify_email(body.token, body.password)
     return VerifiedResponse()
 
 

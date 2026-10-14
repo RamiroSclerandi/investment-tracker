@@ -159,6 +159,8 @@ export interface components {
         };
         /** VerifyEmailRequest */
         VerifyEmailRequest: {
+            /** Password */
+            password: string;
             /** Token */
             token: string;
         };
