@@ -1,7 +1,7 @@
 import pytest
 from starlette.requests import Request
 
-from investment_tracker.core.rate_limit import UNKNOWN_CLIENT_KEY, client_ip_key
+from investment_tracker.core.rate_limit import UNKNOWN_CLIENT_KEY, client_ip, client_ip_key
 
 
 def _request(headers: dict[str, str]) -> Request:
@@ -36,3 +36,11 @@ def test_ipv6_addresses_in_the_same_64_share_a_key() -> None:
 )
 def test_requests_without_a_valid_cloudflare_ip_share_one_bucket(headers: dict[str, str]) -> None:
     assert client_ip_key(_request(headers)) == UNKNOWN_CLIENT_KEY
+
+
+@pytest.mark.parametrize("address", ["fe80::1%eth0", "2001:db8::1%1"])
+def test_a_scoped_ipv6_address_is_not_a_valid_client_ip(address: str) -> None:
+    request = _request({"CF-Connecting-IP": address})
+
+    assert client_ip(request) is None
+    assert client_ip_key(request) == UNKNOWN_CLIENT_KEY

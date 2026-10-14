@@ -1,0 +1,2 @@
+# Type annotation in a test, not a credential: the key is generated at runtime.
+6e88c33103f9a2bde856a043cfe24d5fb6a00e78:apps/api/tests/unit/test_access_tokens.py:generic-api-key:17

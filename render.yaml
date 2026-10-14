@@ -14,3 +14,5 @@ services:
         value: production
       - key: DATABASE_URL
         sync: false
+      - key: JWT_PRIVATE_KEY
+        sync: false

@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from testcontainers.community.postgres import PostgresContainer
 
 from investment_tracker.core.email import EmailMessage
-from investment_tracker.core.rate_limit import limiter
+from investment_tracker.core.rate_limit import limiter, login_limiter
 from investment_tracker.core.settings import Settings
 from investment_tracker.main import create_app
 
@@ -74,6 +74,7 @@ def emails() -> RecordingEmailSender:
 @pytest.fixture
 def app(migrated_database_url: str, emails: RecordingEmailSender) -> FastAPI:
     limiter.reset()
+    login_limiter.reset()
     settings = Settings(
         database_url=SecretStr(migrated_database_url),
         web_base_url=WEB_BASE_URL,

@@ -2,10 +2,18 @@ import asyncio
 from logging.config import fileConfig
 
 from alembic import context
+from pydantic import SecretStr
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import Connection, pool
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from investment_tracker.core.settings import Settings
+
+# Migrations only need the database; the app's full settings would also demand runtime secrets.
+class MigrationSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    database_url: SecretStr
+
 
 config = context.config
 if config.config_file_name is not None:
@@ -20,7 +28,7 @@ def run_migrations(connection: Connection) -> None:
 
 async def run_migrations_online() -> None:
     engine = create_async_engine(
-        Settings().database_url.get_secret_value(), poolclass=pool.NullPool
+        MigrationSettings().database_url.get_secret_value(), poolclass=pool.NullPool
     )
     async with engine.connect() as connection:
         await connection.run_sync(run_migrations)

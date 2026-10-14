@@ -4,7 +4,7 @@ from datetime import datetime
 from sqlalchemy import Select, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from investment_tracker.auth.models import EmailToken, EmailTokenPurpose, User
+from investment_tracker.auth.models import EmailToken, EmailTokenPurpose, RefreshToken, User
 
 
 class UserRepository:
@@ -18,6 +18,9 @@ class UserRepository:
         # populate_existing refreshes a copy already in the identity map from an earlier read.
         return await self._session.get(User, user_id, with_for_update=True, populate_existing=True)
 
+    async def get_by_email(self, email: str) -> User | None:
+        return await self._session.scalar(select(User).where(User.email == email))
+
     async def get_by_email_for_update(self, email: str) -> User | None:
         statement = select(User).where(User.email == email).with_for_update()
         return await self._session.scalar(statement)
@@ -25,6 +28,14 @@ class UserRepository:
     async def add(self, user: User) -> None:
         self._session.add(user)
         await self._session.flush()
+
+
+class RefreshTokenRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    def add(self, token: RefreshToken) -> None:
+        self._session.add(token)
 
 
 class EmailTokenRepository:

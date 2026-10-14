@@ -1,23 +1,37 @@
 import uuid
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from investment_tracker.auth.emails import verification_email
-from investment_tracker.auth.errors import InvalidEmailTokenError
-from investment_tracker.auth.models import EmailToken, EmailTokenPurpose, User
+from investment_tracker.auth.errors import (
+    EmailNotVerifiedError,
+    InvalidAccessTokenError,
+    InvalidCredentialsError,
+    InvalidEmailTokenError,
+    UnauthorizedError,
+)
+from investment_tracker.auth.jwt import AccessTokens
+from investment_tracker.auth.models import EmailToken, EmailTokenPurpose, RefreshToken, User
 from investment_tracker.auth.passwords import (
     DUMMY_PASSWORD_HASH,
     hash_password_async,
     verify_password_async,
 )
-from investment_tracker.auth.repository import EmailTokenRepository, UserRepository
+from investment_tracker.auth.repository import (
+    EmailTokenRepository,
+    RefreshTokenRepository,
+    UserRepository,
+)
 from investment_tracker.auth.tokens import hash_token, new_token
 from investment_tracker.core.email import EmailMessage
 from investment_tracker.core.settings import Settings
 
 VERIFY_TOKEN_TTL = timedelta(hours=24)
+REFRESH_TOKEN_TTL = timedelta(days=30)
+USER_AGENT_MAX_LENGTH = 256
 
 
 class AuthService:
@@ -133,3 +147,69 @@ class AuthService:
             web_base_url=self._settings.web_base_url,
             raw_token=raw,
         )
+
+
+@dataclass(frozen=True)
+class IssuedSession:
+    access_token: str
+    expires_in: int
+    refresh_token: str
+
+
+class SessionService:
+    def __init__(self, session: AsyncSession, access_tokens: AccessTokens) -> None:
+        self._session = session
+        self._access_tokens = access_tokens
+        self._users = UserRepository(session)
+        self._refresh_tokens = RefreshTokenRepository(session)
+
+    async def login(
+        self, email: str, password: str, *, user_agent: str | None, ip: str | None
+    ) -> IssuedSession:
+        # Argon2 runs outside any transaction so no connection or row lock is held during it.
+        async with self._session.begin():
+            user = await self._users.get_by_email(email)
+        if user is None or user.password_hash is None or not user.is_active:
+            await verify_password_async(DUMMY_PASSWORD_HASH, password)
+            raise InvalidCredentialsError
+        if not await verify_password_async(user.password_hash, password):
+            raise InvalidCredentialsError
+        # Revealed only after the password checks out, so it cannot be used to probe accounts.
+        if user.email_verified_at is None:
+            raise EmailNotVerifiedError
+        refresh_token = await self._start_family(user.id, user.password_hash, user_agent, ip)
+        access_token, expires_in = self._access_tokens.issue(user.id)
+        return IssuedSession(access_token, expires_in, refresh_token)
+
+    async def authenticate(self, access_token: str) -> User:
+        try:
+            user_id = self._access_tokens.decode(access_token)
+        except InvalidAccessTokenError:
+            raise UnauthorizedError from None
+        async with self._session.begin():
+            user = await self._users.get(user_id)
+        if user is None or not user.is_active:
+            raise UnauthorizedError
+        return user
+
+    async def _start_family(
+        self, user_id: uuid.UUID, known_hash: str, user_agent: str | None, ip: str | None
+    ) -> str:
+        raw, token_hash = new_token()
+        now = datetime.now(UTC)
+        async with self._session.begin():
+            user = await self._users.get_for_update(user_id)
+            # The account may have changed while argon2 ran.
+            if user is None or not user.is_active or user.password_hash != known_hash:
+                raise InvalidCredentialsError
+            self._refresh_tokens.add(
+                RefreshToken(
+                    user_id=user_id,
+                    family_id=uuid.uuid4(),
+                    token_hash=token_hash,
+                    expires_at=now + REFRESH_TOKEN_TTL,
+                    user_agent=user_agent[:USER_AGENT_MAX_LENGTH] if user_agent else None,
+                    ip=ip,
+                )
+            )
+        return raw

@@ -1,7 +1,13 @@
+import uuid
+
 import httpx
+import pytest
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from cryptography.hazmat.primitives.serialization import Encoding, NoEncryption, PrivateFormat
 from fastapi import FastAPI
 from pydantic import SecretStr
 
+from investment_tracker.auth.jwt import AccessTokens
 from investment_tracker.core.email import SmtpEmailSender, UnconfiguredEmailSender
 from investment_tracker.core.settings import Settings
 from investment_tracker.main import create_app
@@ -9,11 +15,16 @@ from investment_tracker.main import create_app
 DATABASE_URL = "postgresql+asyncpg://user:pass@localhost:5432/test"
 
 
+def _ed25519_pem(key: Ed25519PrivateKey) -> str:
+    return key.private_bytes(Encoding.PEM, PrivateFormat.PKCS8, NoEncryption()).decode()
+
+
 def production_app() -> FastAPI:
     return create_app(
         Settings(
             database_url=SecretStr("postgresql+asyncpg://user:pass@localhost:5432/test"),
             environment="production",
+            jwt_private_key=SecretStr(_ed25519_pem(Ed25519PrivateKey.generate())),
         )
     )
 
@@ -53,3 +64,35 @@ def test_email_sender_defaults_to_smtp_when_an_smtp_url_is_set() -> None:
     app = create_app(settings)
 
     assert isinstance(app.state.email_sender, SmtpEmailSender)
+
+
+def test_access_tokens_are_signed_with_the_configured_key() -> None:
+    key = Ed25519PrivateKey.generate()
+    settings = Settings(
+        database_url=SecretStr(DATABASE_URL),
+        jwt_private_key=SecretStr(_ed25519_pem(key)),
+        _env_file=None,
+    )
+    user_id = uuid.uuid4()
+
+    app = create_app(settings)
+
+    token, _ = app.state.access_tokens.issue(user_id)
+    verifier = AccessTokens(key, issuer=settings.jwt_issuer, audience=settings.jwt_audience)
+    assert verifier.decode(token) == user_id
+
+
+async def test_an_ephemeral_signing_key_is_generated_outside_production_without_logging_it(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    settings = Settings(database_url=SecretStr(DATABASE_URL), _env_file=None)
+    user_id = uuid.uuid4()
+
+    app = create_app(settings)
+    async with app.router.lifespan_context(app):
+        token, _ = app.state.access_tokens.issue(user_id)
+
+    assert app.state.access_tokens.decode(token) == user_id
+    output = capsys.readouterr().out
+    assert "jwt_signing_key_ephemeral" in output
+    assert "PRIVATE KEY" not in output
