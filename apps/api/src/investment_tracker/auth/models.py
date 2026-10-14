@@ -49,3 +49,17 @@ class EmailToken(TimestampMixin, Base):
     token_hash: Mapped[str] = mapped_column(unique=True)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class RefreshToken(TimestampMixin, Base):
+    __tablename__ = "refresh_tokens"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    family_id: Mapped[uuid.UUID]
+    token_hash: Mapped[str] = mapped_column(unique=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    rotated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    user_agent: Mapped[str | None]
+    ip: Mapped[str | None]
