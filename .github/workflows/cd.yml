@@ -45,6 +45,7 @@ jobs:
   migrate:
     needs: image
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment: production
     permissions:
       packages: read
