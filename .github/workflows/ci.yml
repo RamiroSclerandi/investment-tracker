@@ -65,6 +65,21 @@ jobs:
       - name: Generated client freshness
         run: pnpm api:check
 
+  images:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      matrix:
+        app: [api, web]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build the ${{ matrix.app }} image
+        env:
+          APP: ${{ matrix.app }}
+        run: docker build --provenance=false -t "investment-tracker-$APP:ci" "apps/$APP"
+
   gitleaks:
     runs-on: ubuntu-latest
     permissions:
