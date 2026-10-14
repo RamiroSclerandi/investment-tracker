@@ -5,8 +5,13 @@ import structlog
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from fastapi import APIRouter, FastAPI
 
-from investment_tracker.auth.errors import UnauthorizedError, handle_unauthorized
+from investment_tracker.auth.errors import (
+    InvalidRefreshTokenError,
+    UnauthorizedError,
+    handle_unauthorized,
+)
 from investment_tracker.auth.jwt import AccessTokens
+from investment_tracker.auth.router import handle_invalid_refresh_token
 from investment_tracker.auth.router import router as auth_router
 from investment_tracker.core.db import create_engine, create_sessionmaker
 from investment_tracker.core.email import EmailSender, SmtpEmailSender, UnconfiguredEmailSender
@@ -69,6 +74,7 @@ def create_app(settings: Settings, email_sender: EmailSender | None = None) -> F
     app.add_middleware(RequestIdMiddleware)
     register_exception_handlers(app)
     app.add_exception_handler(UnauthorizedError, handle_unauthorized)
+    app.add_exception_handler(InvalidRefreshTokenError, handle_invalid_refresh_token)
     register_rate_limiting(app)
     api_router = APIRouter(prefix=API_PREFIX)
     api_router.include_router(ops_router)

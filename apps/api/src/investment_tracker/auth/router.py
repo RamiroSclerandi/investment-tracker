@@ -1,15 +1,27 @@
 import uuid
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Self
 
 import structlog
 from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response, status
-from pydantic import BaseModel, EmailStr, Field, StringConstraints
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints, model_validator
 
-from investment_tracker.auth.dependencies import CurrentUserDep, SessionServiceDep
-from investment_tracker.auth.models import Currency
-from investment_tracker.auth.service import REFRESH_TOKEN_TTL, AuthService
+from investment_tracker.auth.dependencies import (
+    CurrentUserDep,
+    SessionServiceDep,
+    require_csrf_header,
+)
+from investment_tracker.auth.errors import InvalidRefreshTokenError
+from investment_tracker.auth.models import Currency, User
+from investment_tracker.auth.service import (
+    REFRESH_TOKEN_TTL,
+    AuthService,
+    IssuedSession,
+    ProfileService,
+)
 from investment_tracker.core.db import SessionDep
 from investment_tracker.core.email import EmailDeliveryError, EmailMessage, EmailSender
+from investment_tracker.core.errors import problem_response
 from investment_tracker.core.rate_limit import client_ip, client_ip_key, limiter, login_limiter
 
 logger = structlog.get_logger()
@@ -22,20 +34,21 @@ NO_STORE = {"Cache-Control": "no-store"}
 
 
 Password = Annotated[str, Field(min_length=12, max_length=128)]
+DisplayName = Annotated[
+    str,
+    StringConstraints(
+        strip_whitespace=True,
+        min_length=1,
+        max_length=80,
+        pattern=r"^[^\x00-\x1f\x7f\x85\u2028\u2029]+$",
+    ),
+]
 
 
 class RegisterRequest(BaseModel):
     email: EmailStr
     password: Password
-    display_name: Annotated[
-        str,
-        StringConstraints(
-            strip_whitespace=True,
-            min_length=1,
-            max_length=80,
-            pattern=r"^[^\x00-\x1f\x7f\x85\u2028\u2029]+$",
-        ),
-    ]
+    display_name: DisplayName
 
 
 class VerifyEmailRequest(BaseModel):
@@ -51,6 +64,19 @@ class LoginRequest(BaseModel):
     # No minimum beyond one character, so a validation error never reveals the password policy.
     email: EmailStr
     password: str = Field(min_length=1, max_length=128)
+
+
+class UpdateProfileRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    display_name: DisplayName | None = None
+    preferred_currency: Currency | None = None
+
+    @model_validator(mode="after")
+    def require_a_change(self) -> Self:
+        if self.display_name is None and self.preferred_currency is None:
+            raise ValueError("Provide display_name or preferred_currency.")
+        return self
 
 
 class TokenResponse(BaseModel):
@@ -80,6 +106,73 @@ def get_auth_service(request: Request, session: SessionDep) -> AuthService:
 
 
 AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]
+
+
+def get_profile_service(session: SessionDep) -> ProfileService:
+    return ProfileService(session)
+
+
+ProfileServiceDep = Annotated[ProfileService, Depends(get_profile_service)]
+
+
+def set_refresh_cookie(response: Response, refresh_token: str) -> None:
+    response.set_cookie(
+        REFRESH_COOKIE_NAME,
+        refresh_token,
+        max_age=int(REFRESH_TOKEN_TTL.total_seconds()),
+        path=REFRESH_COOKIE_PATH,
+        secure=True,
+        httponly=True,
+        samesite="strict",
+    )
+
+
+def clear_refresh_cookie(response: Response) -> None:
+    response.delete_cookie(
+        REFRESH_COOKIE_NAME,
+        path=REFRESH_COOKIE_PATH,
+        secure=True,
+        httponly=True,
+        samesite="strict",
+    )
+
+
+def client_details(request: Request) -> tuple[str | None, str | None]:
+    address = client_ip(request)
+    return request.headers.get("user-agent"), str(address) if address is not None else None
+
+
+def token_response(response: Response, issued: IssuedSession) -> TokenResponse:
+    set_refresh_cookie(response, issued.refresh_token)
+    return TokenResponse(access_token=issued.access_token, expires_in=issued.expires_in)
+
+
+def profile_response(response: Response, user: User) -> ProfileResponse:
+    response.headers.update(NO_STORE)
+    return ProfileResponse(
+        id=user.id,
+        email=user.email,
+        display_name=user.display_name,
+        preferred_currency=user.preferred_currency,
+        email_verified=user.email_verified_at is not None,
+    )
+
+
+def empty_response_clearing_cookie() -> Response:
+    response = Response(status_code=status.HTTP_204_NO_CONTENT, headers=NO_STORE)
+    clear_refresh_cookie(response)
+    return response
+
+
+async def handle_invalid_refresh_token(request: Request, exc: Exception) -> JSONResponse:
+    if not isinstance(exc, InvalidRefreshTokenError):
+        raise exc
+    response = problem_response(
+        request, status=exc.status, title=exc.title, detail=str(exc), code=exc.code
+    )
+    response.headers.update(NO_STORE)
+    clear_refresh_cookie(response)
+    return response
 
 
 async def deliver_email(sender: EmailSender, message: EmailMessage) -> None:
@@ -139,32 +232,53 @@ async def login(
 ) -> TokenResponse:
     response.headers.update(NO_STORE)
     login_limiter.hit(f"{client_ip_key(request)}:{body.email.lower()}")
-    address = client_ip(request)
-    issued = await service.login(
-        body.email,
-        body.password,
-        user_agent=request.headers.get("user-agent"),
-        ip=str(address) if address is not None else None,
+    user_agent, ip = client_details(request)
+    issued = await service.login(body.email, body.password, user_agent=user_agent, ip=ip)
+    return token_response(response, issued)
+
+
+@router.post("/refresh", dependencies=[Depends(require_csrf_header)])
+@limiter.limit("30/minute")
+async def refresh(
+    request: Request, response: Response, service: SessionServiceDep
+) -> TokenResponse:
+    response.headers.update(NO_STORE)
+    user_agent, ip = client_details(request)
+    issued = await service.refresh(
+        request.cookies.get(REFRESH_COOKIE_NAME), user_agent=user_agent, ip=ip
     )
-    response.set_cookie(
-        REFRESH_COOKIE_NAME,
-        issued.refresh_token,
-        max_age=int(REFRESH_TOKEN_TTL.total_seconds()),
-        path=REFRESH_COOKIE_PATH,
-        secure=True,
-        httponly=True,
-        samesite="strict",
-    )
-    return TokenResponse(access_token=issued.access_token, expires_in=issued.expires_in)
+    return token_response(response, issued)
+
+
+@router.post(
+    "/logout",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_csrf_header)],
+)
+async def logout(request: Request, service: SessionServiceDep) -> Response:
+    await service.logout(request.cookies.get(REFRESH_COOKIE_NAME))
+    return empty_response_clearing_cookie()
+
+
+@router.post("/logout-all", status_code=status.HTTP_204_NO_CONTENT)
+async def logout_all(user: CurrentUserDep, service: SessionServiceDep) -> Response:
+    await service.logout_all(user.id)
+    return empty_response_clearing_cookie()
 
 
 @router.get("/me")
 async def me(response: Response, user: CurrentUserDep) -> ProfileResponse:
-    response.headers.update(NO_STORE)
-    return ProfileResponse(
-        id=user.id,
-        email=user.email,
-        display_name=user.display_name,
-        preferred_currency=user.preferred_currency,
-        email_verified=user.email_verified_at is not None,
+    return profile_response(response, user)
+
+
+@router.patch("/me")
+async def update_me(
+    response: Response,
+    body: UpdateProfileRequest,
+    user: CurrentUserDep,
+    service: ProfileServiceDep,
+) -> ProfileResponse:
+    updated = await service.update(
+        user.id, display_name=body.display_name, preferred_currency=body.preferred_currency
     )
+    return profile_response(response, updated)

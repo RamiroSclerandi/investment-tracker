@@ -37,6 +37,51 @@ class RefreshTokenRepository:
     def add(self, token: RefreshToken) -> None:
         self._session.add(token)
 
+    async def get_by_hash(self, token_hash: str) -> RefreshToken | None:
+        return await self._session.scalar(
+            select(RefreshToken).where(RefreshToken.token_hash == token_hash)
+        )
+
+    # Every writer locks rows in id order before changing them, so concurrent refreshes and
+    # revocations serialize without deadlocking, and a later statement sees any token a
+    # concurrent rotation inserted.
+    async def lock_family_of(self, token_hash: str) -> list[RefreshToken]:
+        family_id = (
+            select(RefreshToken.family_id)
+            .where(RefreshToken.token_hash == token_hash)
+            .scalar_subquery()
+        )
+        statement = (
+            select(RefreshToken)
+            .where(RefreshToken.family_id == family_id)
+            .order_by(RefreshToken.id)
+            .with_for_update()
+            .execution_options(populate_existing=True)
+        )
+        return list(await self._session.scalars(statement))
+
+    async def lock_all_for_user(self, user_id: uuid.UUID) -> None:
+        await self._session.execute(
+            select(RefreshToken.id)
+            .where(RefreshToken.user_id == user_id)
+            .order_by(RefreshToken.id)
+            .with_for_update()
+        )
+
+    async def revoke_family(self, family_id: uuid.UUID, now: datetime) -> None:
+        await self._session.execute(
+            update(RefreshToken)
+            .where(RefreshToken.family_id == family_id, RefreshToken.revoked_at.is_(None))
+            .values(revoked_at=now)
+        )
+
+    async def revoke_all_for_user(self, user_id: uuid.UUID, now: datetime) -> None:
+        await self._session.execute(
+            update(RefreshToken)
+            .where(RefreshToken.user_id == user_id, RefreshToken.revoked_at.is_(None))
+            .values(revoked_at=now)
+        )
+
 
 class EmailTokenRepository:
     def __init__(self, session: AsyncSession) -> None:

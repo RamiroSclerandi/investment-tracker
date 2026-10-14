@@ -1,14 +1,16 @@
 from typing import Annotated
 
-from fastapi import Depends, Request
+from fastapi import Depends, Header, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from investment_tracker.auth.errors import UnauthorizedError
+from investment_tracker.auth.errors import CsrfHeaderRequiredError, UnauthorizedError
 from investment_tracker.auth.models import User
 from investment_tracker.auth.service import SessionService
 from investment_tracker.core.db import SessionDep
 
 bearer_scheme = HTTPBearer(auto_error=False)
+
+CSRF_HEADER_VALUE = "investment-tracker"
 
 
 def get_session_service(request: Request, session: SessionDep) -> SessionService:
@@ -28,3 +30,11 @@ async def get_current_user(
 
 
 CurrentUserDep = Annotated[User, Depends(get_current_user)]
+
+
+# A cross-site form or link cannot set a custom header, so its presence proves a same-origin call.
+async def require_csrf_header(
+    x_requested_with: Annotated[str | None, Header()] = None,
+) -> None:
+    if x_requested_with != CSRF_HEADER_VALUE:
+        raise CsrfHeaderRequiredError
