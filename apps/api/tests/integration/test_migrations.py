@@ -17,3 +17,5 @@ def test_baseline_upgrades_and_downgrades(
 
     command.upgrade(config, "head")
     command.downgrade(config, "base")
+    # The session-scoped migrated database is shared with later tests.
+    command.upgrade(config, "head")
