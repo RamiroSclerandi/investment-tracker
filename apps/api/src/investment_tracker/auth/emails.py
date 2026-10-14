@@ -13,3 +13,16 @@ def verification_email(
         "Si no creaste una cuenta, ignorá este mensaje.\n"
     )
     return EmailMessage(to=to, subject="Verificá tu email", text=text)
+
+
+def password_reset_email(
+    *, to: str, display_name: str, web_base_url: str, raw_token: str
+) -> EmailMessage:
+    link = f"{web_base_url}/reset-password#token={raw_token}"
+    text = (
+        f"Hola {display_name},\n\n"
+        "Para elegir una nueva contraseña de Investment Tracker, abrí este enlace dentro de "
+        f"los próximos 30 minutos:\n\n{link}\n\n"
+        "Si no lo pediste, ignorá este mensaje: tu contraseña no cambia.\n"
+    )
+    return EmailMessage(to=to, subject="Restablecé tu contraseña", text=text)

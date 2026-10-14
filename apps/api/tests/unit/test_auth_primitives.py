@@ -1,6 +1,6 @@
 import hashlib
 
-from investment_tracker.auth.emails import verification_email
+from investment_tracker.auth.emails import password_reset_email, verification_email
 from investment_tracker.auth.passwords import (
     hash_password,
     hash_password_async,
@@ -41,6 +41,20 @@ def test_verification_email_carries_the_token_in_the_link_fragment() -> None:
     assert message.subject == "Verificá tu email"
     assert "https://app.example.com/verify-email#token=abc123" in message.text
     assert "24 horas" in message.text
+
+
+def test_password_reset_email_carries_the_token_in_the_link_fragment() -> None:
+    message = password_reset_email(
+        to="ana@example.com",
+        display_name="Ana",
+        web_base_url="https://app.example.com",
+        raw_token="abc123",  # noqa: S106
+    )
+
+    assert message.to == "ana@example.com"
+    assert message.subject == "Restablecé tu contraseña"
+    assert "https://app.example.com/reset-password#token=abc123" in message.text
+    assert "30 minutos" in message.text
 
 
 def test_verify_password_accepts_the_matching_password() -> None:
