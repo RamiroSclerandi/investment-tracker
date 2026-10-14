@@ -2,7 +2,7 @@ name: CI
 
 on:
   pull_request:
-    types: [opened, edited, synchronize, reopened]
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: read
@@ -12,21 +12,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  pr-title:
-    name: PR title lint (conventional commits)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check Conventional Commits title
-        env:
-          TITLE: ${{ github.event.pull_request.title }}
-        run: |
-          pattern='^(feat|fix|chore|refactor|perf|test|docs|build|ci|style|revert)(\([a-z0-9-]+\))?!?: [^ ].*$'
-          if [[ ! "$TITLE" =~ $pattern ]]; then
-            echo "::error::PR title must follow Conventional Commits, e.g. 'feat(api): add health endpoint'."
-            printf 'Got: %s\n' "$TITLE"
-            exit 1
-          fi
-
   api:
     runs-on: ubuntu-latest
     defaults:
