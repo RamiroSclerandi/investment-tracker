@@ -31,6 +31,24 @@ class EmailNotVerifiedError(DomainError):
         super().__init__("Verify your email before logging in.")
 
 
+class InvalidRefreshTokenError(DomainError):
+    code = "INVALID_REFRESH_TOKEN"
+    status = 401
+    title = "Invalid refresh token"
+
+    def __init__(self) -> None:
+        super().__init__("The session is invalid or has expired. Log in again.")
+
+
+class CsrfHeaderRequiredError(DomainError):
+    code = "CSRF_HEADER_REQUIRED"
+    status = 403
+    title = "CSRF header required"
+
+    def __init__(self) -> None:
+        super().__init__("The X-Requested-With header is missing or invalid.")
+
+
 class InvalidAccessTokenError(Exception):
     pass
 

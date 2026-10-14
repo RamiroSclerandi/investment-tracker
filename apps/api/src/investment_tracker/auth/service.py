@@ -2,6 +2,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
+import structlog
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,10 +12,17 @@ from investment_tracker.auth.errors import (
     InvalidAccessTokenError,
     InvalidCredentialsError,
     InvalidEmailTokenError,
+    InvalidRefreshTokenError,
     UnauthorizedError,
 )
 from investment_tracker.auth.jwt import AccessTokens
-from investment_tracker.auth.models import EmailToken, EmailTokenPurpose, RefreshToken, User
+from investment_tracker.auth.models import (
+    Currency,
+    EmailToken,
+    EmailTokenPurpose,
+    RefreshToken,
+    User,
+)
 from investment_tracker.auth.passwords import (
     DUMMY_PASSWORD_HASH,
     hash_password_async,
@@ -31,7 +39,10 @@ from investment_tracker.core.settings import Settings
 
 VERIFY_TOKEN_TTL = timedelta(hours=24)
 REFRESH_TOKEN_TTL = timedelta(days=30)
+SESSION_MAX_LIFETIME = timedelta(days=60)
 USER_AGENT_MAX_LENGTH = 256
+
+logger = structlog.get_logger()
 
 
 class AuthService:
@@ -192,6 +203,68 @@ class SessionService:
             raise UnauthorizedError
         return user
 
+    async def refresh(
+        self, raw_token: str | None, *, user_agent: str | None, ip: str | None
+    ) -> IssuedSession:
+        if not raw_token:
+            raise InvalidRefreshTokenError
+        new_raw, new_hash = new_token()
+        # Revocations must commit, so the outcome is decided inside the transaction and the
+        # error is raised after it.
+        async with self._session.begin():
+            user_id = await self._rotate(hash_token(raw_token), new_hash, user_agent, ip)
+        if user_id is None:
+            raise InvalidRefreshTokenError
+        access_token, expires_in = self._access_tokens.issue(user_id)
+        return IssuedSession(access_token, expires_in, new_raw)
+
+    async def logout(self, raw_token: str | None) -> None:
+        if not raw_token:
+            return
+        token_hash = hash_token(raw_token)
+        async with self._session.begin():
+            if await self._lock_owner_of(token_hash) is None:
+                return
+            family = await self._refresh_tokens.lock_family_of(token_hash)
+            if family:
+                await self._refresh_tokens.revoke_family(family[0].family_id, datetime.now(UTC))
+
+    async def logout_all(self, user_id: uuid.UUID) -> None:
+        async with self._session.begin():
+            await self._users.get_for_update(user_id)
+            await self._refresh_tokens.lock_all_for_user(user_id)
+            await self._refresh_tokens.revoke_all_for_user(user_id, datetime.now(UTC))
+
+    async def _lock_owner_of(self, token_hash: str) -> User | None:
+        # User row before token rows: the same lock order as login and verification, so
+        # refresh, logout and logout-all cannot deadlock with them or with each other.
+        token = await self._refresh_tokens.get_by_hash(token_hash)
+        if token is None:
+            return None
+        return await self._users.get_for_update(token.user_id)
+
+    async def _rotate(
+        self, token_hash: str, new_hash: str, user_agent: str | None, ip: str | None
+    ) -> uuid.UUID | None:
+        now = datetime.now(UTC)
+        user = await self._lock_owner_of(token_hash)
+        family = await self._refresh_tokens.lock_family_of(token_hash)
+        token = next((row for row in family if row.token_hash == token_hash), None)
+        if token is None or token.revoked_at is not None or token.expires_at <= now:
+            return None
+        if token.rotated_at is not None:
+            logger.warning("refresh_token_reuse_detected", family_id=str(token.family_id))
+            await self._refresh_tokens.revoke_family(token.family_id, now)
+            return None
+        session_end = min(row.created_at for row in family) + SESSION_MAX_LIFETIME
+        if user is None or not user.is_active or now >= session_end:
+            await self._refresh_tokens.revoke_family(token.family_id, now)
+            return None
+        token.rotated_at = now
+        expires_at = min(now + REFRESH_TOKEN_TTL, session_end)
+        self._add_refresh_token(user.id, token.family_id, new_hash, expires_at, user_agent, ip)
+        return user.id
+
     async def _start_family(
         self, user_id: uuid.UUID, known_hash: str, user_agent: str | None, ip: str | None
     ) -> str:
@@ -202,14 +275,50 @@ class SessionService:
             # The account may have changed while argon2 ran.
             if user is None or not user.is_active or user.password_hash != known_hash:
                 raise InvalidCredentialsError
-            self._refresh_tokens.add(
-                RefreshToken(
-                    user_id=user_id,
-                    family_id=uuid.uuid4(),
-                    token_hash=token_hash,
-                    expires_at=now + REFRESH_TOKEN_TTL,
-                    user_agent=user_agent[:USER_AGENT_MAX_LENGTH] if user_agent else None,
-                    ip=ip,
-                )
+            self._add_refresh_token(
+                user_id, uuid.uuid4(), token_hash, now + REFRESH_TOKEN_TTL, user_agent, ip
             )
         return raw
+
+    def _add_refresh_token(
+        self,
+        user_id: uuid.UUID,
+        family_id: uuid.UUID,
+        token_hash: str,
+        expires_at: datetime,
+        user_agent: str | None,
+        ip: str | None,
+    ) -> None:
+        self._refresh_tokens.add(
+            RefreshToken(
+                user_id=user_id,
+                family_id=family_id,
+                token_hash=token_hash,
+                expires_at=expires_at,
+                user_agent=user_agent[:USER_AGENT_MAX_LENGTH] if user_agent else None,
+                ip=ip,
+            )
+        )
+
+
+class ProfileService:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+        self._users = UserRepository(session)
+
+    async def update(
+        self,
+        user_id: uuid.UUID,
+        *,
+        display_name: str | None,
+        preferred_currency: Currency | None,
+    ) -> User:
+        async with self._session.begin():
+            user = await self._users.get_for_update(user_id)
+            if user is None or not user.is_active:
+                raise UnauthorizedError
+            if display_name is not None:
+                user.display_name = display_name
+            if preferred_currency is not None:
+                user.preferred_currency = preferred_currency
+        return user
