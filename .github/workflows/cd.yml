@@ -93,10 +93,18 @@ jobs:
             echo "::error::Render deploy hook answered HTTP $code without a deploy id (202 means another deploy is queued)."
             exit 1
           fi
-          for _ in $(seq 60); do
-            status="$(curl -fsS --max-time 20 --retry 3 -H "Authorization: Bearer $RENDER_API_KEY" \
-              "https://api.render.com/v1/services/$service_id/deploys/$deploy_id" | jq -r '.status' || true)"
-            echo "Deploy $deploy_id: ${status:-unknown}"
+          wait_seconds=600
+          deadline=$((SECONDS + wait_seconds))
+          while (( SECONDS < deadline )); do
+            response="$(curl -sS --max-time 20 -w '\n%{http_code}' -H "Authorization: Bearer $RENDER_API_KEY" \
+              "https://api.render.com/v1/services/$service_id/deploys/$deploy_id" || true)"
+            code="$(tail -n1 <<<"$response")"
+            if [[ "$code" == "401" || "$code" == "403" ]]; then
+              echo "::error::Render API answered HTTP $code for deploy $deploy_id; check RENDER_API_KEY."
+              exit 1
+            fi
+            status="$(head -n -1 <<<"$response" | jq -r '.status // empty' 2>/dev/null || true)"
+            echo "Deploy $deploy_id: ${status:-unknown} (HTTP $code)"
             case "$status" in
               live) exit 0 ;;
               build_failed|update_failed|pre_deploy_failed|canceled|deactivated)
@@ -105,7 +113,7 @@ jobs:
             esac
             sleep 10
           done
-          echo "::error::Render deploy $deploy_id was not live after 10 minutes."
+          echo "::error::Render deploy $deploy_id was not live after $((wait_seconds / 60)) minutes."
           exit 1
 
   promote:
