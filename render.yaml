@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: investment-tracker-api
+    runtime: image
+    image:
+      url: ghcr.io/ramirosclerandi/investment-tracker-api:latest
+    plan: free
+    region: virginia
+    healthCheckPath: /api/v1/healthz
+    envVars:
+      - key: PORT
+        value: "8000"
+      - key: ENVIRONMENT
+        value: production
+      - key: DATABASE_URL
+        sync: false

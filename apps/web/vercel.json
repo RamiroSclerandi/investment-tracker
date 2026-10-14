@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "npm install -g corepack@latest && corepack pnpm install --frozen-lockfile",
+  "buildCommand": "corepack pnpm run build",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://investment-tracker-lf1k.onrender.com/api/:path*"
+    },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ]
+}
