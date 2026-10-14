@@ -60,6 +60,15 @@ class ResendVerificationRequest(BaseModel):
     email: EmailStr
 
 
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str = Field(min_length=1, max_length=256)
+    password: Password
+
+
 class LoginRequest(BaseModel):
     # No minimum beyond one character, so a validation error never reveals the password policy.
     email: EmailStr
@@ -223,6 +232,28 @@ async def resend_verification(
     message = await service.resend_verification(body.email)
     schedule_delivery(request, background_tasks, message)
     return AcceptedResponse()
+
+
+@router.post("/password/forgot", status_code=status.HTTP_202_ACCEPTED)
+@limiter.limit("3/minute")
+async def forgot_password(
+    request: Request,
+    body: ForgotPasswordRequest,
+    service: AuthServiceDep,
+    background_tasks: BackgroundTasks,
+) -> AcceptedResponse:
+    message = await service.request_password_reset(body.email)
+    schedule_delivery(request, background_tasks, message)
+    return AcceptedResponse()
+
+
+@router.post("/password/reset", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("10/minute")
+async def reset_password(
+    request: Request, body: ResetPasswordRequest, service: AuthServiceDep
+) -> Response:
+    await service.reset_password(body.token, body.password)
+    return empty_response_clearing_cookie()
 
 
 @router.post("/login")

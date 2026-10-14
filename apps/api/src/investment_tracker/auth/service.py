@@ -6,7 +6,7 @@ import structlog
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from investment_tracker.auth.emails import verification_email
+from investment_tracker.auth.emails import password_reset_email, verification_email
 from investment_tracker.auth.errors import (
     EmailNotVerifiedError,
     InvalidAccessTokenError,
@@ -38,6 +38,7 @@ from investment_tracker.core.email import EmailMessage
 from investment_tracker.core.settings import Settings
 
 VERIFY_TOKEN_TTL = timedelta(hours=24)
+RESET_TOKEN_TTL = timedelta(minutes=30)
 REFRESH_TOKEN_TTL = timedelta(days=30)
 SESSION_MAX_LIFETIME = timedelta(days=60)
 USER_AGENT_MAX_LENGTH = 256
@@ -51,6 +52,7 @@ class AuthService:
         self._settings = settings
         self._users = UserRepository(session)
         self._tokens = EmailTokenRepository(session)
+        self._refresh_tokens = RefreshTokenRepository(session)
 
     async def register(self, email: str, password: str, display_name: str) -> EmailMessage | None:
         # Hashing runs on every request so response time does not reveal existing accounts.
@@ -120,6 +122,54 @@ class AuthService:
             if user is None or not user.is_active or user.email_verified_at is not None:
                 return None
             return await self._replace_verification_token(user)
+
+    async def request_password_reset(self, email: str) -> EmailMessage | None:
+        # Unverified accounts may reset: the link proves mailbox ownership like verification.
+        async with self._session.begin():
+            user = await self._users.get_by_email_for_update(email)
+            if user is None or not user.is_active:
+                return None
+            now = datetime.now(UTC)
+            await self._tokens.invalidate_active(user.id, EmailTokenPurpose.RESET_PASSWORD, now)
+            raw, token_hash = new_token()
+            self._tokens.add(
+                EmailToken(
+                    user_id=user.id,
+                    purpose=EmailTokenPurpose.RESET_PASSWORD,
+                    token_hash=token_hash,
+                    expires_at=now + RESET_TOKEN_TTL,
+                )
+            )
+            return password_reset_email(
+                to=user.email,
+                display_name=user.display_name,
+                web_base_url=self._settings.web_base_url,
+                raw_token=raw,
+            )
+
+    async def reset_password(self, raw_token: str, password: str) -> None:
+        token_hash = hash_token(raw_token)
+        # Hashed before the transaction, for every token, so no lock is held during argon2
+        # and a bad token costs the same time as a good one.
+        new_hash = await hash_password_async(password)
+        now = datetime.now(UTC)
+        async with self._session.begin():
+            pending = await self._tokens.get_active(
+                token_hash, EmailTokenPurpose.RESET_PASSWORD, now
+            )
+            # User before token: the same lock order as verification, register and logout-all.
+            user = await self._users.get_for_update(pending.user_id) if pending else None
+            token = await self._tokens.get_active_for_update(
+                token_hash, EmailTokenPurpose.RESET_PASSWORD, now
+            )
+            if user is None or not user.is_active or token is None or token.user_id != user.id:
+                raise InvalidEmailTokenError
+            user.password_hash = new_hash
+            if user.email_verified_at is None:
+                user.email_verified_at = now
+            token.used_at = now
+            await self._refresh_tokens.lock_all_for_user(user.id)
+            await self._refresh_tokens.revoke_all_for_user(user.id, now)
 
     async def _register_user(
         self, email: str, password_hash: str, display_name: str

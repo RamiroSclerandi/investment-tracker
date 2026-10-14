@@ -49,6 +49,15 @@ class CsrfHeaderRequiredError(DomainError):
         super().__init__("The X-Requested-With header is missing or invalid.")
 
 
+class PasswordHashingBusyError(DomainError):
+    code = "SERVICE_BUSY"
+    status = 503
+    title = "Service busy"
+
+    def __init__(self) -> None:
+        super().__init__("The service is busy. Try again in a few seconds.")
+
+
 class InvalidAccessTokenError(Exception):
     pass
 
