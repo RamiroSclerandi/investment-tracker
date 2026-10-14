@@ -126,13 +126,14 @@ jobs:
   smoke:
     needs: deploy
     runs-on: ubuntu-latest
+    environment: production
     steps:
       - name: Health check through the Vercel rewrite
         env:
           WEB_URL: ${{ vars.PROD_WEB_URL }}
         run: |
           if [[ -z "$WEB_URL" ]]; then
-            echo "::error::Repository variable PROD_WEB_URL is not set."
+            echo "::error::Variable PROD_WEB_URL is not set in the production environment."
             exit 1
           fi
           for _ in $(seq 30); do
