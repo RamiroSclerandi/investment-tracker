@@ -14,8 +14,8 @@ ISSUER = "investment-tracker"
 AUDIENCE = "investment-tracker-web"
 
 
-def _access_tokens(key: Ed25519PrivateKey | None = None) -> AccessTokens:
-    return AccessTokens(key or Ed25519PrivateKey.generate(), issuer=ISSUER, audience=AUDIENCE)
+def _access_tokens(signer: Ed25519PrivateKey | None = None) -> AccessTokens:
+    return AccessTokens(signer or Ed25519PrivateKey.generate(), issuer=ISSUER, audience=AUDIENCE)
 
 
 def _expected_kid(key: Ed25519PrivateKey) -> str:
