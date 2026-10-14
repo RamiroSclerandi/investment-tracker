@@ -5,7 +5,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://investment-tracker-lf1k.onrender.com/api/:path*"
+      "destination": "https://investment-tracker-api-hsm2.onrender.com/api/:path*"
     },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
