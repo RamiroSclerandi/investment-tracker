@@ -3,6 +3,9 @@ server {
     server_name _;
     root /usr/share/nginx/html;
 
+    # add_header in a location drops the server-level ones, so each location re-includes them.
+    include /etc/nginx/snippets/security-headers.conf;
+
     location /api/ {
         proxy_pass ${API_UPSTREAM};
         proxy_set_header Host $host;
@@ -11,7 +14,13 @@ server {
     }
 
     location /assets/ {
+        include /etc/nginx/snippets/security-headers.conf;
         add_header Cache-Control "public, max-age=31536000, immutable";
+    }
+
+    location = /index.html {
+        include /etc/nginx/snippets/security-headers.conf;
+        add_header Cache-Control "no-cache";
     }
 
     location / {

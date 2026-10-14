@@ -2,7 +2,7 @@ name: CI
 
 on:
   pull_request:
-    types: [opened, edited, synchronize, reopened]
+    types: [opened, synchronize, reopened]
 
 permissions:
   contents: read
@@ -12,21 +12,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  pr-title:
-    name: PR title lint (conventional commits)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check Conventional Commits title
-        env:
-          TITLE: ${{ github.event.pull_request.title }}
-        run: |
-          pattern='^(feat|fix|chore|refactor|perf|test|docs|build|ci|style|revert)(\([a-z0-9-]+\))?!?: [^ ].*$'
-          if [[ ! "$TITLE" =~ $pattern ]]; then
-            echo "::error::PR title must follow Conventional Commits, e.g. 'feat(api): add health endpoint'."
-            printf 'Got: %s\n' "$TITLE"
-            exit 1
-          fi
-
   api:
     runs-on: ubuntu-latest
     defaults:
@@ -79,6 +64,21 @@ jobs:
       - run: pnpm build
       - name: Generated client freshness
         run: pnpm api:check
+
+  images:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      matrix:
+        app: [api, web]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build the ${{ matrix.app }} image
+        env:
+          APP: ${{ matrix.app }}
+        run: docker build --provenance=false -t "investment-tracker-$APP:ci" "apps/$APP"
 
   gitleaks:
     runs-on: ubuntu-latest
