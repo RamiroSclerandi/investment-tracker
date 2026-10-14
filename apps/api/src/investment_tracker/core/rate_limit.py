@@ -2,6 +2,9 @@ import ipaddress
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from limits import parse
+from limits.storage import MemoryStorage
+from limits.strategies import MovingWindowRateLimiter
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 
@@ -14,10 +17,20 @@ UNKNOWN_CLIENT_KEY = "unknown-client"
 IPV6_VERSION = 6
 
 
-def client_ip_key(request: Request) -> str:
+def client_ip(request: Request) -> ipaddress.IPv4Address | ipaddress.IPv6Address | None:
     try:
         address = ipaddress.ip_address(request.headers.get(CLIENT_IP_HEADER, "").strip())
     except ValueError:
+        return None
+    # A zone suffix never comes from a real client and would give each suffix its own bucket.
+    if isinstance(address, ipaddress.IPv6Address) and address.scope_id is not None:
+        return None
+    return address
+
+
+def client_ip_key(request: Request) -> str:
+    address = client_ip(request)
+    if address is None:
         return UNKNOWN_CLIENT_KEY
     if address.version == IPV6_VERSION:
         # One IPv6 client usually controls a whole /64, so per-address keys would not limit it.
@@ -28,8 +41,30 @@ def client_ip_key(request: Request) -> str:
 limiter = Limiter(key_func=client_ip_key)
 
 
+class KeyedRateLimitExceededError(Exception):
+    pass
+
+
+class KeyedRateLimiter:
+    # slowapi key functions cannot read the parsed body, so body-keyed limits live here.
+    def __init__(self, limit: str) -> None:
+        self._item = parse(limit)
+        self._storage = MemoryStorage()
+        self._strategy = MovingWindowRateLimiter(self._storage)
+
+    def hit(self, key: str) -> None:
+        if not self._strategy.hit(self._item, key):
+            raise KeyedRateLimitExceededError
+
+    def reset(self) -> None:
+        self._storage.reset()
+
+
+login_limiter = KeyedRateLimiter("5/minute")
+
+
 async def handle_rate_limit_exceeded(request: Request, exc: Exception) -> JSONResponse:
-    if not isinstance(exc, RateLimitExceeded):
+    if not isinstance(exc, RateLimitExceeded | KeyedRateLimitExceededError):
         raise exc
     return problem_response(
         request,
@@ -43,3 +78,4 @@ async def handle_rate_limit_exceeded(request: Request, exc: Exception) -> JSONRe
 def register_rate_limiting(app: FastAPI) -> None:
     app.state.limiter = limiter
     app.add_exception_handler(RateLimitExceeded, handle_rate_limit_exceeded)
+    app.add_exception_handler(KeyedRateLimitExceededError, handle_rate_limit_exceeded)
