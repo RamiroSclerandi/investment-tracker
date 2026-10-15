@@ -1,5 +1,6 @@
 import asyncio
 import base64
+import math
 import re
 import time
 from collections.abc import Callable
@@ -107,13 +108,23 @@ class GmailApiEmailSender:
             raise EmailDeliveryError(f"gmail_token_refresh_failed: {response.status_code}")
         token = payload.get("access_token")
         expires_in = payload.get("expires_in")
-        if response.is_success and isinstance(token, str) and token and _is_positive(expires_in):
+        if (
+            response.is_success
+            and isinstance(token, str)
+            and token
+            and _is_positive_finite(expires_in)
+        ):
             return token, float(expires_in)
         raise EmailDeliveryError(f"gmail_token_refresh_failed: {_error_code(payload, response)}")
 
 
-def _is_positive(value: object) -> TypeIs[int | float]:
-    return isinstance(value, int | float) and not isinstance(value, bool) and value > 0
+def _is_positive_finite(value: object) -> TypeIs[int | float]:
+    return (
+        isinstance(value, int | float)
+        and not isinstance(value, bool)
+        and math.isfinite(value)
+        and value > 0
+    )
 
 
 def _error_code(payload: dict[str, object], response: httpx.Response) -> str:

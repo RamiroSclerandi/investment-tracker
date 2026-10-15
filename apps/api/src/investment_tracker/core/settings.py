@@ -23,7 +23,8 @@ def load_jwt_private_key(pem: SecretStr) -> Ed25519PrivateKey:
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    # Validation errors would otherwise echo raw env values, secrets included, into boot logs.
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore", hide_input_in_errors=True)
 
     database_url: SecretStr
     environment: Literal["development", "test", "production"] = "development"
@@ -41,6 +42,20 @@ class Settings(BaseSettings):
     gmail_client_secret: SecretStr | None = None
     gmail_refresh_token: SecretStr | None = None
     gmail_sender: EmailStr | None = None
+
+    @field_validator(
+        "gmail_client_id",
+        "gmail_client_secret",
+        "gmail_refresh_token",
+        "gmail_sender",
+        mode="before",
+    )
+    @classmethod
+    def treat_blank_gmail_values_as_unset(cls, value: object) -> object:
+        raw = value.get_secret_value() if isinstance(value, SecretStr) else value
+        if isinstance(raw, str) and not raw.strip():
+            return None
+        return value
 
     @field_validator("web_base_url")
     @classmethod

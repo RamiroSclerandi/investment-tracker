@@ -218,3 +218,14 @@ async def test_a_network_error_fails_the_delivery() -> None:
 
     assert str(excinfo.value) == "gmail_token_refresh_failed: ConnectError"
     assert excinfo.value.__cause__ is None
+
+
+async def test_an_infinite_token_expiry_is_malformed() -> None:
+    body = b'{"access_token": "x", "expires_in": Infinity}'
+    google = FakeGoogle(token_response=lambda request: httpx.Response(200, content=body))
+    sender, _ = build_sender(google.handler)
+
+    with pytest.raises(
+        EmailDeliveryError, match=r"^gmail_token_refresh_failed: malformed_response$"
+    ):
+        await sender.send(MESSAGE)
