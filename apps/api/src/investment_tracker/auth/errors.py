@@ -72,6 +72,25 @@ async def handle_password_hashing_busy(request: Request, exc: Exception) -> JSON
     return response
 
 
+class OidcUnavailableError(DomainError):
+    code = "OIDC_UNAVAILABLE"
+    status = 503
+    title = "Google sign-in unavailable"
+
+    def __init__(self) -> None:
+        super().__init__("Google sign-in is not available. Sign in with email and password.")
+
+
+async def handle_oidc_unavailable(request: Request, exc: Exception) -> JSONResponse:
+    if not isinstance(exc, OidcUnavailableError):
+        raise exc
+    response = problem_response(
+        request, status=exc.status, title=exc.title, detail=str(exc), code=exc.code
+    )
+    response.headers["Cache-Control"] = "no-store"
+    return response
+
+
 class InvalidAccessTokenError(Exception):
     pass
 

@@ -4,7 +4,14 @@ from datetime import datetime
 from sqlalchemy import Select, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from investment_tracker.auth.models import EmailToken, EmailTokenPurpose, RefreshToken, User
+from investment_tracker.auth.models import (
+    EmailToken,
+    EmailTokenPurpose,
+    OAuthAccount,
+    OAuthProvider,
+    RefreshToken,
+    User,
+)
 
 
 class UserRepository:
@@ -27,6 +34,22 @@ class UserRepository:
 
     async def add(self, user: User) -> None:
         self._session.add(user)
+        await self._session.flush()
+
+
+class OAuthAccountRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def get(self, provider: OAuthProvider, subject: str) -> OAuthAccount | None:
+        return await self._session.scalar(
+            select(OAuthAccount).where(
+                OAuthAccount.provider == provider, OAuthAccount.provider_subject == subject
+            )
+        )
+
+    async def add(self, account: OAuthAccount) -> None:
+        self._session.add(account)
         await self._session.flush()
 
 

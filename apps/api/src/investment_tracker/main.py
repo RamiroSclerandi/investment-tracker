@@ -7,10 +7,18 @@ from fastapi import APIRouter, FastAPI
 
 from investment_tracker.auth.errors import (
     InvalidRefreshTokenError,
+    OidcUnavailableError,
     PasswordHashingBusyError,
     UnauthorizedError,
+    handle_oidc_unavailable,
     handle_password_hashing_busy,
     handle_unauthorized,
+)
+from investment_tracker.auth.google import (
+    GoogleIdentityProvider,
+    GoogleOidcClient,
+    OidcStateCodec,
+    google_signing_keys,
 )
 from investment_tracker.auth.jwt import AccessTokens
 from investment_tracker.auth.router import handle_invalid_refresh_token
@@ -42,7 +50,23 @@ def signing_key(settings: Settings) -> Ed25519PrivateKey:
     return Ed25519PrivateKey.generate()
 
 
-def create_app(settings: Settings, email_sender: EmailSender | None = None) -> FastAPI:
+def default_google_client(settings: Settings) -> GoogleIdentityProvider | None:
+    if settings.google_client_id is None or settings.google_client_secret is None:
+        return None
+    # The web app proxies /api, so Google redirects back to the web origin and cookies land there.
+    return GoogleOidcClient(
+        settings.google_client_id,
+        settings.google_client_secret,
+        f"{settings.web_base_url}{API_PREFIX}/auth/google/callback",
+        signing_keys=google_signing_keys(),
+    )
+
+
+def create_app(
+    settings: Settings,
+    email_sender: EmailSender | None = None,
+    google: GoogleIdentityProvider | None = None,
+) -> FastAPI:
     configure_logging(settings.log_level)
 
     @asynccontextmanager
@@ -70,14 +94,20 @@ def create_app(settings: Settings, email_sender: EmailSender | None = None) -> F
     )
     app.state.settings = settings
     app.state.email_sender = email_sender or default_email_sender(settings)
+    private_key = signing_key(settings)
     app.state.access_tokens = AccessTokens(
-        signing_key(settings), issuer=settings.jwt_issuer, audience=settings.jwt_audience
+        private_key, issuer=settings.jwt_issuer, audience=settings.jwt_audience
     )
+    app.state.oidc_state = OidcStateCodec(
+        private_key, issuer=settings.jwt_issuer, audience=f"{settings.jwt_audience}:oidc"
+    )
+    app.state.google = google or default_google_client(settings)
     app.add_middleware(RequestIdMiddleware)
     register_exception_handlers(app)
     app.add_exception_handler(UnauthorizedError, handle_unauthorized)
     app.add_exception_handler(InvalidRefreshTokenError, handle_invalid_refresh_token)
     app.add_exception_handler(PasswordHashingBusyError, handle_password_hashing_busy)
+    app.add_exception_handler(OidcUnavailableError, handle_oidc_unavailable)
     register_rate_limiting(app)
     api_router = APIRouter(prefix=API_PREFIX)
     api_router.include_router(ops_router)

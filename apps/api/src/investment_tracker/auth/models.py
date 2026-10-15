@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, text
+from sqlalchemy import DateTime, Enum, ForeignKey, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import CITEXT
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -17,6 +17,10 @@ class Currency(enum.StrEnum):
 class EmailTokenPurpose(enum.StrEnum):
     VERIFY_EMAIL = "verify_email"
     RESET_PASSWORD = "reset_password"  # noqa: S105
+
+
+class OAuthProvider(enum.StrEnum):
+    GOOGLE = "google"
 
 
 def _enum_values(enum_type: type[enum.StrEnum]) -> list[str]:
@@ -63,3 +67,16 @@ class RefreshToken(TimestampMixin, Base):
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     user_agent: Mapped[str | None]
     ip: Mapped[str | None]
+
+
+class OAuthAccount(TimestampMixin, Base):
+    __tablename__ = "oauth_accounts"
+    __table_args__ = (UniqueConstraint("provider", "provider_subject"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    provider: Mapped[OAuthProvider] = mapped_column(
+        Enum(OAuthProvider, name="oauth_provider", values_callable=_enum_values)
+    )
+    provider_subject: Mapped[str]
+    email: Mapped[str]
