@@ -134,3 +134,46 @@ def test_production_boots_without_google_credentials() -> None:
 
     assert settings.google_client_id is None
     assert settings.google_client_secret is None
+
+
+def _gmail_settings() -> dict[str, object]:
+    return {
+        "gmail_client_id": "gmail-client",
+        "gmail_client_secret": SecretStr("-".join(["gmail", "secret"])),
+        "gmail_refresh_token": SecretStr("-".join(["gmail", "refresh"])),
+        "gmail_sender": "owner@gmail.com",
+    }
+
+
+def test_gmail_settings_default_to_none() -> None:
+    settings = Settings(database_url=DATABASE_URL, _env_file=None)
+
+    assert settings.gmail_client_id is None
+    assert settings.gmail_client_secret is None
+    assert settings.gmail_refresh_token is None
+    assert settings.gmail_sender is None
+
+
+def test_a_complete_gmail_config_is_accepted() -> None:
+    settings = Settings(database_url=DATABASE_URL, _env_file=None, **_gmail_settings())  # type: ignore[arg-type]
+
+    assert settings.gmail_sender == "owner@gmail.com"
+
+
+def test_a_partial_gmail_config_refuses_to_boot_naming_the_missing_keys() -> None:
+    partial = _gmail_settings()
+    del partial["gmail_refresh_token"], partial["gmail_sender"]
+
+    with pytest.raises(
+        ValidationError, match="missing GMAIL_REFRESH_TOKEN, GMAIL_SENDER"
+    ) as excinfo:
+        Settings(database_url=DATABASE_URL, _env_file=None, **partial)  # type: ignore[arg-type]
+
+    assert "gmail-secret" not in str(excinfo.value)
+
+
+def test_an_invalid_gmail_sender_is_rejected() -> None:
+    config = _gmail_settings() | {"gmail_sender": "not-an-email"}
+
+    with pytest.raises(ValidationError, match="gmail_sender"):
+        Settings(database_url=DATABASE_URL, _env_file=None, **config)  # type: ignore[arg-type]
