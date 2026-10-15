@@ -15,5 +15,5 @@ async def test_every_table_in_the_app_schema_has_row_level_security(engine: Asyn
         )
         tables: dict[str, bool] = dict(rows.tuples().all())
 
-    assert {"users", "email_tokens", "refresh_tokens"} <= tables.keys()
+    assert {"users", "email_tokens", "refresh_tokens", "oauth_accounts"} <= tables.keys()
     assert [name for name, enabled in tables.items() if not enabled] == []
