@@ -4,7 +4,7 @@ from urllib.parse import urlsplit
 from cryptography.exceptions import UnsupportedAlgorithm
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives.serialization import load_pem_private_key
-from pydantic import Field, SecretStr, field_validator, model_validator
+from pydantic import EmailStr, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 SMTP_SCHEMES = frozenset({"smtp", "smtp+starttls", "smtps"})
@@ -23,7 +23,8 @@ def load_jwt_private_key(pem: SecretStr) -> Ed25519PrivateKey:
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    # Validation errors would otherwise echo raw env values, secrets included, into boot logs.
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore", hide_input_in_errors=True)
 
     database_url: SecretStr
     environment: Literal["development", "test", "production"] = "development"
@@ -37,6 +38,24 @@ class Settings(BaseSettings):
     jwt_audience: str = "investment-tracker-web"
     google_client_id: str | None = None
     google_client_secret: SecretStr | None = None
+    gmail_client_id: str | None = None
+    gmail_client_secret: SecretStr | None = None
+    gmail_refresh_token: SecretStr | None = None
+    gmail_sender: EmailStr | None = None
+
+    @field_validator(
+        "gmail_client_id",
+        "gmail_client_secret",
+        "gmail_refresh_token",
+        "gmail_sender",
+        mode="before",
+    )
+    @classmethod
+    def treat_blank_gmail_values_as_unset(cls, value: object) -> object:
+        raw = value.get_secret_value() if isinstance(value, SecretStr) else value
+        if isinstance(raw, str) and not raw.strip():
+            return None
+        return value
 
     @field_validator("web_base_url")
     @classmethod
@@ -52,6 +71,22 @@ class Settings(BaseSettings):
             raise ValueError(f"SMTP_URL scheme must be one of {sorted(SMTP_SCHEMES)}.")
         if self.environment == "production" and scheme not in TLS_SMTP_SCHEMES:
             raise ValueError("SMTP_URL must use TLS in production (smtp+starttls:// or smtps://).")
+        return self
+
+    @model_validator(mode="after")
+    def validate_gmail_config(self) -> Self:
+        values = {
+            "GMAIL_CLIENT_ID": self.gmail_client_id,
+            "GMAIL_CLIENT_SECRET": self.gmail_client_secret,
+            "GMAIL_REFRESH_TOKEN": self.gmail_refresh_token,
+            "GMAIL_SENDER": self.gmail_sender,
+        }
+        missing = [key for key, value in values.items() if value is None]
+        if 0 < len(missing) < len(values):
+            raise ValueError(
+                f"Gmail API email needs all of {', '.join(values)} or none of them;"
+                f" missing {', '.join(missing)}."
+            )
         return self
 
     @model_validator(mode="after")

@@ -10,6 +10,7 @@ from pydantic import SecretStr
 
 from investment_tracker.auth.jwt import AccessTokens
 from investment_tracker.core.email import SmtpEmailSender, UnconfiguredEmailSender
+from investment_tracker.core.gmail import GmailApiEmailSender
 from investment_tracker.core.settings import Settings
 from investment_tracker.main import create_app
 
@@ -85,6 +86,22 @@ def test_email_sender_defaults_to_smtp_when_an_smtp_url_is_set() -> None:
     app = create_app(settings)
 
     assert isinstance(app.state.email_sender, SmtpEmailSender)
+
+
+def test_email_sender_prefers_the_gmail_api_over_smtp() -> None:
+    settings = Settings(
+        database_url=SecretStr(DATABASE_URL),
+        smtp_url=SecretStr("smtp://mailpit:1025"),
+        gmail_client_id="gmail-client",
+        gmail_client_secret=SecretStr("-".join(["gmail", "secret"])),
+        gmail_refresh_token=SecretStr("-".join(["gmail", "refresh"])),
+        gmail_sender="owner@gmail.com",
+        _env_file=None,
+    )
+
+    app = create_app(settings)
+
+    assert isinstance(app.state.email_sender, GmailApiEmailSender)
 
 
 def test_access_tokens_are_signed_with_the_configured_key() -> None:

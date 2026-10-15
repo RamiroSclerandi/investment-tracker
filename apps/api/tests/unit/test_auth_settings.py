@@ -1,3 +1,5 @@
+import secrets
+
 import pytest
 from cryptography.hazmat.primitives.asymmetric.ec import SECP256R1, generate_private_key
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -134,3 +136,87 @@ def test_production_boots_without_google_credentials() -> None:
 
     assert settings.google_client_id is None
     assert settings.google_client_secret is None
+
+
+def _gmail_settings() -> dict[str, object]:
+    return {
+        "gmail_client_id": "gmail-client",
+        "gmail_client_secret": SecretStr("-".join(["gmail", "secret"])),
+        "gmail_refresh_token": SecretStr("-".join(["gmail", "refresh"])),
+        "gmail_sender": "owner@gmail.com",
+    }
+
+
+def test_gmail_settings_default_to_none() -> None:
+    settings = Settings(database_url=DATABASE_URL, _env_file=None)
+
+    assert settings.gmail_client_id is None
+    assert settings.gmail_client_secret is None
+    assert settings.gmail_refresh_token is None
+    assert settings.gmail_sender is None
+
+
+def test_a_complete_gmail_config_is_accepted() -> None:
+    settings = Settings(database_url=DATABASE_URL, _env_file=None, **_gmail_settings())  # type: ignore[arg-type]
+
+    assert settings.gmail_sender == "owner@gmail.com"
+
+
+GMAIL_ENV_KEYS = ("GMAIL_CLIENT_ID", "GMAIL_CLIENT_SECRET", "GMAIL_REFRESH_TOKEN", "GMAIL_SENDER")
+
+
+def _set_gmail_env(monkeypatch: pytest.MonkeyPatch, values: dict[str, str]) -> None:
+    for key in GMAIL_ENV_KEYS:
+        monkeypatch.delenv(key, raising=False)
+    for key, value in values.items():
+        monkeypatch.setenv(key, value)
+
+
+def test_a_partial_gmail_config_refuses_to_boot_without_echoing_raw_env_values(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    marker = f"rt{secrets.token_hex(4)}"
+    _set_gmail_env(monkeypatch, {"GMAIL_CLIENT_ID": "gmail-client", "GMAIL_REFRESH_TOKEN": marker})
+    # Pydantic truncates the input repr to its head and tail; a short env-only marker sits in
+    # the visible tail, where a real boot would leak the last raw value.
+    monkeypatch.setenv("DATABASE_URL", DATABASE_URL.get_secret_value())
+
+    with pytest.raises(
+        ValidationError, match="missing GMAIL_CLIENT_SECRET, GMAIL_SENDER"
+    ) as excinfo:
+        Settings(_env_file=None)
+
+    assert marker not in str(excinfo.value)
+
+
+@pytest.mark.parametrize("blank", ["", "   "])
+def test_a_blank_gmail_value_counts_as_missing(monkeypatch: pytest.MonkeyPatch, blank: str) -> None:
+    _set_gmail_env(monkeypatch, {"GMAIL_CLIENT_ID": blank})
+
+    settings = Settings(database_url=DATABASE_URL, _env_file=None)
+
+    assert settings.gmail_client_id is None
+
+
+def test_a_blank_gmail_value_makes_an_otherwise_full_config_partial(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _set_gmail_env(
+        monkeypatch,
+        {
+            "GMAIL_CLIENT_ID": "gmail-client",
+            "GMAIL_CLIENT_SECRET": "",
+            "GMAIL_REFRESH_TOKEN": "-".join(["gmail", "refresh"]),
+            "GMAIL_SENDER": "owner@gmail.com",
+        },
+    )
+
+    with pytest.raises(ValidationError, match="missing GMAIL_CLIENT_SECRET"):
+        Settings(database_url=DATABASE_URL, _env_file=None)
+
+
+def test_an_invalid_gmail_sender_is_rejected() -> None:
+    config = _gmail_settings() | {"gmail_sender": "not-an-email"}
+
+    with pytest.raises(ValidationError, match="gmail_sender"):
+        Settings(database_url=DATABASE_URL, _env_file=None, **config)  # type: ignore[arg-type]
