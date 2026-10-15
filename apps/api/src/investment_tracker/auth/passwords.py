@@ -31,6 +31,7 @@ def verify_password(password_hash: str, password: str) -> bool:
 
 @asynccontextmanager
 async def _argon2_slot() -> AsyncIterator[None]:
+    # The module global can be swapped (tests do), so release the semaphore that was acquired.
     slots = _argon2_slots
     try:
         async with asyncio.timeout(ARGON2_WAIT_SECONDS):
