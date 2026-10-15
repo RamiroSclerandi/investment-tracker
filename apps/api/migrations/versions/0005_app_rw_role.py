@@ -40,6 +40,8 @@ def upgrade() -> None:
         $$
         """
     )
+    # The role is cluster-wide and may predate this migration with unsafe attributes.
+    op.execute("ALTER ROLE app_rw NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOINHERIT")
     _revoke_exposed_roles()
     op.execute("GRANT USAGE ON SCHEMA app TO app_rw")
     # Supabase installs citext in "extensions"; elsewhere it lives in "public".
@@ -49,6 +51,12 @@ def upgrade() -> None:
         BEGIN
             IF EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = 'extensions') THEN
                 GRANT USAGE ON SCHEMA extensions TO app_rw;
+                -- Without the grant option GRANT only warns, and citext would then fail at runtime.
+                IF NOT has_schema_privilege('app_rw', 'extensions', 'USAGE') THEN
+                    RAISE EXCEPTION 'app_rw did not receive USAGE on schema extensions'
+                        USING HINT = 'Run the migration as a role that owns schema extensions'
+                            ' or holds USAGE on it WITH GRANT OPTION, then retry.';
+                END IF;
             END IF;
         END
         $$
@@ -68,18 +76,6 @@ def upgrade() -> None:
 def _revoke_exposed_roles() -> None:
     op.execute("REVOKE ALL ON SCHEMA app FROM PUBLIC")
     op.execute("REVOKE ALL ON ALL TABLES IN SCHEMA app FROM PUBLIC")
-    # Global form on purpose: a per-schema default cannot remove the built-in PUBLIC execute.
-    op.execute(
-        """
-        DO $$
-        BEGIN
-            EXECUTE format(
-                'ALTER DEFAULT PRIVILEGES FOR ROLE %I REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC',
-                current_user);
-        END
-        $$
-        """
-    )
     # Supabase roles do not exist locally or in CI.
     op.execute(
         """
