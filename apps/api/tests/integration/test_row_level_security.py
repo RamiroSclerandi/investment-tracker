@@ -2,10 +2,15 @@ import uuid
 from collections.abc import AsyncIterator
 from typing import Any
 
+import httpx
 import pytest
+from fastapi import FastAPI
 from sqlalchemy import text
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
+
+from investment_tracker.auth.dependencies import CurrentUserDep
+from investment_tracker.core.db import SessionDep
 
 pytestmark = pytest.mark.integration
 
@@ -180,3 +185,55 @@ async def test_the_user_id_setting_is_local_to_its_transaction(app_engine: Async
     assert inside == user_id
     # Postgres reports a placeholder setting that was only ever set locally as empty, not NULL.
     assert after in {None, ""}
+
+
+@pytest.fixture
+def probed_app(app: FastAPI) -> FastAPI:
+    async def read_setting(session: SessionDep) -> str | None:
+        async with session.begin():
+            value: str | None = await session.scalar(USER_ID_SETTING)
+        return value
+
+    async def authenticated(_user: CurrentUserDep, session: SessionDep) -> dict[str, str | None]:
+        return {"user_id": await read_setting(session)}
+
+    async def anonymous(session: SessionDep) -> dict[str, str | None]:
+        return {"user_id": await read_setting(session)}
+
+    app.add_api_route("/probe/authenticated", authenticated)
+    app.add_api_route("/probe/anonymous", anonymous)
+    return app
+
+
+async def _create_user(engine: AsyncEngine) -> uuid.UUID:
+    async with engine.begin() as connection:
+        user_id: uuid.UUID = await connection.scalar(
+            text(
+                "INSERT INTO app.users (email, display_name, email_verified_at)"
+                " VALUES ('rls@example.com', 'Rls', now()) RETURNING id"
+            )
+        )
+    return user_id
+
+
+async def test_an_authenticated_request_sets_its_user_id_for_later_transactions(
+    probed_app: FastAPI, client: httpx.AsyncClient, engine: AsyncEngine
+) -> None:
+    user_id = await _create_user(engine)
+    token, _ = probed_app.state.access_tokens.issue(user_id)
+
+    response = await client.get(
+        "/probe/authenticated", headers={"Authorization": f"Bearer {token}"}
+    )
+
+    assert response.status_code == httpx.codes.OK
+    assert response.json() == {"user_id": str(user_id)}
+
+
+async def test_an_unauthenticated_request_sets_no_user_id(
+    probed_app: FastAPI, client: httpx.AsyncClient
+) -> None:
+    response = await client.get("/probe/anonymous")
+
+    assert response.status_code == httpx.codes.OK
+    assert response.json()["user_id"] in {None, ""}
