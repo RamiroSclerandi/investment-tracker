@@ -1,7 +1,6 @@
 import base64
 import hashlib
 import hmac
-import re
 import secrets
 import uuid
 from dataclasses import dataclass
@@ -11,6 +10,7 @@ import structlog
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from investment_tracker.auth.display_name import DISPLAY_NAME_FORBIDDEN, DISPLAY_NAME_MAX_LENGTH
 from investment_tracker.auth.emails import password_reset_email, verification_email
 from investment_tracker.auth.errors import (
     EmailNotVerifiedError,
@@ -57,9 +57,6 @@ RESET_TOKEN_TTL = timedelta(minutes=30)
 REFRESH_TOKEN_TTL = timedelta(days=30)
 SESSION_MAX_LIFETIME = timedelta(days=60)
 USER_AGENT_MAX_LENGTH = 256
-DISPLAY_NAME_MAX_LENGTH = 80
-# Mirrors the display name pattern accepted from clients: no control or line separator chars.
-DISPLAY_NAME_FORBIDDEN_CHARS = re.compile(r"[\x00-\x1f\x7f\x85\u2028\u2029]")
 
 logger = structlog.get_logger()
 
@@ -384,7 +381,7 @@ def new_refresh_token(
 def sanitize_display_name(name: str | None) -> str:
     if name is None:
         return ""
-    cleaned = " ".join(DISPLAY_NAME_FORBIDDEN_CHARS.sub(" ", name).split())
+    cleaned = " ".join(DISPLAY_NAME_FORBIDDEN.sub(" ", name).split())
     return cleaned[:DISPLAY_NAME_MAX_LENGTH].strip()
 
 

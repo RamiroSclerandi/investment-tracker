@@ -11,6 +11,7 @@ from investment_tracker.auth.dependencies import (
     SessionServiceDep,
     require_csrf_header,
 )
+from investment_tracker.auth.display_name import DISPLAY_NAME_MAX_LENGTH, DISPLAY_NAME_PATTERN
 from investment_tracker.auth.errors import InvalidRefreshTokenError, OidcUnavailableError
 from investment_tracker.auth.google import GoogleIdentityProvider, GoogleSignInError
 from investment_tracker.auth.models import Currency, User
@@ -51,8 +52,8 @@ DisplayName = Annotated[
     StringConstraints(
         strip_whitespace=True,
         min_length=1,
-        max_length=80,
-        pattern=r"^[^\x00-\x1f\x7f\x85\u2028\u2029]+$",
+        max_length=DISPLAY_NAME_MAX_LENGTH,
+        pattern=DISPLAY_NAME_PATTERN,
     ),
 ]
 

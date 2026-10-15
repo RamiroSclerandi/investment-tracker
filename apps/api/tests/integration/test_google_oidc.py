@@ -17,8 +17,7 @@ from investment_tracker.auth.tokens import hash_token
 from investment_tracker.core.rate_limit import forgot_email_limiter, limiter, login_limiter
 from investment_tracker.core.settings import Settings
 from investment_tracker.main import create_app
-from tests.integration.conftest import WEB_BASE_URL, RecordingEmailSender
-from tests.unit.test_google_oidc import (
+from tests.google_fakes import (
     CALLBACK_URL,
     CLIENT_ID,
     CLIENT_SECRET,
@@ -26,6 +25,7 @@ from tests.unit.test_google_oidc import (
     FakeGoogle,
     cookie_attributes,
 )
+from tests.integration.conftest import WEB_BASE_URL, RecordingEmailSender
 
 pytestmark = pytest.mark.integration
 
