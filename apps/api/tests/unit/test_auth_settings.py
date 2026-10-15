@@ -22,6 +22,8 @@ def _ed25519_pem() -> str:
 
 
 JWT_PRIVATE_KEY = SecretStr(_ed25519_pem())
+TLS_SMTP_URL = SecretStr("smtps://user:pass@smtp.example.com:465")
+PUBLIC_WEB_BASE_URL = "https://app.example.com"
 
 
 def test_email_settings_default_to_unconfigured_delivery_and_local_web_url() -> None:
@@ -49,6 +51,7 @@ def test_production_accepts_tls_smtp(scheme: str) -> None:
         environment="production",
         jwt_private_key=JWT_PRIVATE_KEY,
         smtp_url=SecretStr(f"{scheme}://user:pass@smtp.example.com:587"),
+        web_base_url=PUBLIC_WEB_BASE_URL,
         _env_file=None,
     )
 
@@ -90,6 +93,8 @@ def test_production_accepts_an_ed25519_jwt_private_key() -> None:
         database_url=DATABASE_URL,
         environment="production",
         jwt_private_key=JWT_PRIVATE_KEY,
+        smtp_url=TLS_SMTP_URL,
+        web_base_url=PUBLIC_WEB_BASE_URL,
         _env_file=None,
     )
 
@@ -131,6 +136,8 @@ def test_production_boots_without_google_credentials() -> None:
         database_url=DATABASE_URL,
         environment="production",
         jwt_private_key=JWT_PRIVATE_KEY,
+        smtp_url=TLS_SMTP_URL,
+        web_base_url=PUBLIC_WEB_BASE_URL,
         _env_file=None,
     )
 
@@ -220,3 +227,111 @@ def test_an_invalid_gmail_sender_is_rejected() -> None:
 
     with pytest.raises(ValidationError, match="gmail_sender"):
         Settings(database_url=DATABASE_URL, _env_file=None, **config)  # type: ignore[arg-type]
+
+
+def test_production_requires_an_email_sender() -> None:
+    with pytest.raises(ValidationError, match="Production requires an email sender"):
+        Settings(
+            database_url=DATABASE_URL,
+            environment="production",
+            jwt_private_key=JWT_PRIVATE_KEY,
+            web_base_url=PUBLIC_WEB_BASE_URL,
+            _env_file=None,
+        )
+
+
+def test_production_accepts_gmail_as_the_email_sender() -> None:
+    settings = Settings(
+        database_url=DATABASE_URL,
+        environment="production",
+        jwt_private_key=JWT_PRIVATE_KEY,
+        web_base_url=PUBLIC_WEB_BASE_URL,
+        _env_file=None,
+        **_gmail_settings(),  # type: ignore[arg-type]
+    )
+
+    assert settings.smtp_url is None
+    assert settings.gmail_sender == "owner@gmail.com"
+
+
+def test_production_accepts_a_tls_smtp_url_as_the_email_sender() -> None:
+    settings = Settings(
+        database_url=DATABASE_URL,
+        environment="production",
+        jwt_private_key=JWT_PRIVATE_KEY,
+        smtp_url=TLS_SMTP_URL,
+        web_base_url=PUBLIC_WEB_BASE_URL,
+        _env_file=None,
+    )
+
+    assert settings.gmail_sender is None
+    assert settings.smtp_url is not None
+
+
+@pytest.mark.parametrize(
+    "web_base_url",
+    [
+        pytest.param("http://localhost:5173", id="default"),
+        pytest.param("http://app.example.com", id="http"),
+        pytest.param("https://", id="hostless"),
+        pytest.param("app.example.com", id="no scheme"),
+    ],
+)
+def test_production_requires_an_https_web_base_url(web_base_url: str) -> None:
+    with pytest.raises(ValidationError, match="WEB_BASE_URL must be the public https origin"):
+        Settings(
+            database_url=DATABASE_URL,
+            environment="production",
+            jwt_private_key=JWT_PRIVATE_KEY,
+            smtp_url=TLS_SMTP_URL,
+            web_base_url=web_base_url,
+            _env_file=None,
+        )
+
+
+def test_production_boot_errors_do_not_echo_configured_values() -> None:
+    marker = f"leak{secrets.token_hex(4)}"
+
+    with pytest.raises(ValidationError, match="Production requires an email sender") as excinfo:
+        Settings(
+            database_url=DATABASE_URL,
+            environment="production",
+            jwt_private_key=JWT_PRIVATE_KEY,
+            web_base_url=f"https://{marker}.example.com",
+            _env_file=None,
+        )
+
+    assert marker not in str(excinfo.value)
+
+
+def test_production_rejects_the_default_web_base_url() -> None:
+    with pytest.raises(ValidationError, match="WEB_BASE_URL"):
+        Settings(
+            database_url=DATABASE_URL,
+            environment="production",
+            jwt_private_key=JWT_PRIVATE_KEY,
+            smtp_url=TLS_SMTP_URL,
+            _env_file=None,
+        )
+
+
+def test_production_accepts_an_https_web_base_url() -> None:
+    settings = Settings(
+        database_url=DATABASE_URL,
+        environment="production",
+        jwt_private_key=JWT_PRIVATE_KEY,
+        smtp_url=TLS_SMTP_URL,
+        web_base_url="https://example.vercel.app/",
+        _env_file=None,
+    )
+
+    assert settings.web_base_url == "https://example.vercel.app"
+
+
+@pytest.mark.parametrize("environment", ["development", "test"])
+def test_non_production_boots_with_defaults_and_no_email_sender(environment: str) -> None:
+    settings = Settings(database_url=DATABASE_URL, environment=environment, _env_file=None)
+
+    assert settings.web_base_url == "http://localhost:5173"
+    assert settings.smtp_url is None
+    assert settings.gmail_sender is None

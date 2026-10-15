@@ -99,3 +99,26 @@ class Settings(BaseSettings):
                 " in PEM format."
             )
         return self
+
+    @model_validator(mode="after")
+    def validate_production_email_sender(self) -> Self:
+        if self.environment != "production":
+            return self
+        if self.gmail_sender is None and self.smtp_url is None:
+            raise ValueError(
+                "Production requires an email sender: set GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET,"
+                " GMAIL_REFRESH_TOKEN and GMAIL_SENDER, or a TLS SMTP_URL."
+            )
+        return self
+
+    @model_validator(mode="after")
+    def validate_production_web_base_url(self) -> Self:
+        if self.environment != "production":
+            return self
+        parts = urlsplit(self.web_base_url)
+        if parts.scheme != "https" or not parts.hostname:
+            raise ValueError(
+                "WEB_BASE_URL must be the public https origin of the web app in production,"
+                " e.g. https://example.vercel.app."
+            )
+        return self
