@@ -6,7 +6,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from investment_tracker.auth.errors import CsrfHeaderRequiredError, UnauthorizedError
 from investment_tracker.auth.models import User
 from investment_tracker.auth.service import SessionService
-from investment_tracker.core.db import SessionDep
+from investment_tracker.core.db import SessionDep, set_session_user
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -22,11 +22,14 @@ SessionServiceDep = Annotated[SessionService, Depends(get_session_service)]
 
 async def get_current_user(
     service: SessionServiceDep,
+    session: SessionDep,
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
 ) -> User:
     if credentials is None:
         raise UnauthorizedError
-    return await service.authenticate(credentials.credentials)
+    user = await service.authenticate(credentials.credentials)
+    set_session_user(session, user.id)
+    return user
 
 
 CurrentUserDep = Annotated[User, Depends(get_current_user)]
