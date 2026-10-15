@@ -35,19 +35,6 @@
         "title": "ForgotPasswordRequest",
         "type": "object"
       },
-      "HTTPValidationError": {
-        "properties": {
-          "detail": {
-            "items": {
-              "$ref": "#/components/schemas/ValidationError"
-            },
-            "title": "Detail",
-            "type": "array"
-          }
-        },
-        "title": "HTTPValidationError",
-        "type": "object"
-      },
       "HealthStatus": {
         "properties": {
           "status": {
@@ -84,6 +71,52 @@
           "password"
         ],
         "title": "LoginRequest",
+        "type": "object"
+      },
+      "ProblemDetail": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationIssue"
+            },
+            "title": "Errors",
+            "type": "array"
+          },
+          "request_id": {
+            "title": "Request Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "integer"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "status",
+          "detail",
+          "code",
+          "request_id",
+          "errors"
+        ],
+        "title": "ProblemDetail",
         "type": "object"
       },
       "ProfileResponse": {
@@ -239,15 +272,8 @@
         "title": "UpdateProfileRequest",
         "type": "object"
       },
-      "ValidationError": {
+      "ValidationIssue": {
         "properties": {
-          "ctx": {
-            "title": "Context",
-            "type": "object"
-          },
-          "input": {
-            "title": "Input"
-          },
           "loc": {
             "items": {
               "anyOf": [
@@ -259,24 +285,19 @@
                 }
               ]
             },
-            "title": "Location",
+            "title": "Loc",
             "type": "array"
           },
           "msg": {
-            "title": "Message",
-            "type": "string"
-          },
-          "type": {
-            "title": "Error Type",
+            "title": "Msg",
             "type": "string"
           }
         },
         "required": [
           "loc",
-          "msg",
-          "type"
+          "msg"
         ],
-        "title": "ValidationError",
+        "title": "ValidationIssue",
         "type": "object"
       },
       "VerifiedResponse": {
@@ -353,9 +374,9 @@
           },
           "422": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ProblemDetail"
                 }
               }
             },
@@ -395,9 +416,9 @@
           },
           "422": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ProblemDetail"
                 }
               }
             },
@@ -479,9 +500,9 @@
           },
           "422": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ProblemDetail"
                 }
               }
             },
@@ -525,9 +546,9 @@
           },
           "422": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ProblemDetail"
                 }
               }
             },
@@ -559,9 +580,9 @@
           },
           "422": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ProblemDetail"
                 }
               }
             },
@@ -608,9 +629,9 @@
           },
           "422": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ProblemDetail"
                 }
               }
             },
@@ -649,9 +670,9 @@
           },
           "422": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ProblemDetail"
                 }
               }
             },
@@ -690,9 +711,9 @@
           },
           "422": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ProblemDetail"
                 }
               }
             },
@@ -731,9 +752,9 @@
           },
           "422": {
             "content": {
-              "application/json": {
+              "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
+                  "$ref": "#/components/schemas/ProblemDetail"
                 }
               }
             },

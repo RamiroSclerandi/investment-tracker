@@ -1,4 +1,5 @@
 import hashlib
+from datetime import timedelta
 
 from investment_tracker.auth.emails import password_reset_email, verification_email
 from investment_tracker.auth.passwords import (
@@ -49,12 +50,26 @@ def test_password_reset_email_carries_the_token_in_the_link_fragment() -> None:
         display_name="Ana",
         web_base_url="https://app.example.com",
         raw_token="abc123",  # noqa: S106
+        ttl=timedelta(minutes=30),
     )
 
     assert message.to == "ana@example.com"
     assert message.subject == "Restablecé tu contraseña"
     assert "https://app.example.com/reset-password#token=abc123" in message.text
     assert "30 minutos" in message.text
+
+
+def test_password_reset_email_states_the_token_lifetime() -> None:
+    message = password_reset_email(
+        to="ana@example.com",
+        display_name="Ana",
+        web_base_url="https://app.example.com",
+        raw_token="abc123",  # noqa: S106
+        ttl=timedelta(minutes=45),
+    )
+
+    assert "45 minutos" in message.text
+    assert "30 minutos" not in message.text
 
 
 def test_verify_password_accepts_the_matching_password() -> None:

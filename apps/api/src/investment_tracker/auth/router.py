@@ -22,7 +22,13 @@ from investment_tracker.auth.service import (
 from investment_tracker.core.db import SessionDep
 from investment_tracker.core.email import EmailDeliveryError, EmailMessage, EmailSender
 from investment_tracker.core.errors import problem_response
-from investment_tracker.core.rate_limit import client_ip, client_ip_key, limiter, login_limiter
+from investment_tracker.core.rate_limit import (
+    client_ip,
+    client_ip_key,
+    forgot_email_limiter,
+    limiter,
+    login_limiter,
+)
 
 logger = structlog.get_logger()
 
@@ -242,6 +248,8 @@ async def forgot_password(
     service: AuthServiceDep,
     background_tasks: BackgroundTasks,
 ) -> AcceptedResponse:
+    if not forgot_email_limiter.allow(f"forgot:{body.email.lower()}"):
+        return AcceptedResponse()
     message = await service.request_password_reset(body.email)
     schedule_delivery(request, background_tasks, message)
     return AcceptedResponse()

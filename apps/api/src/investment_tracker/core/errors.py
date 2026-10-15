@@ -4,6 +4,7 @@ import structlog
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 PROBLEM_CONTENT_TYPE = "application/problem+json"
@@ -96,8 +97,53 @@ async def handle_unexpected_error(request: Request, exc: Exception) -> JSONRespo
     )
 
 
+class ValidationIssue(BaseModel):
+    loc: list[str | int]
+    msg: str
+
+
+class ProblemDetail(BaseModel):
+    type: str
+    title: str
+    status: int
+    detail: str
+    code: str
+    request_id: str
+    errors: list[ValidationIssue]
+
+
+def _use_problem_detail_for_422(schema: dict[str, Any]) -> None:
+    components = schema.setdefault("components", {}).setdefault("schemas", {})
+    components.pop("HTTPValidationError", None)
+    components.pop("ValidationError", None)
+    problem = ProblemDetail.model_json_schema(ref_template="#/components/schemas/{model}")
+    components.update(problem.pop("$defs", {}))
+    components["ProblemDetail"] = problem
+    content = {PROBLEM_CONTENT_TYPE: {"schema": {"$ref": "#/components/schemas/ProblemDetail"}}}
+    for path_item in schema.get("paths", {}).values():
+        for operation in path_item.values():
+            if "422" in operation.get("responses", {}):
+                operation["responses"]["422"]["content"] = content
+
+
+def document_validation_problems(app: FastAPI) -> None:
+    default_openapi = app.openapi
+
+    def openapi() -> dict[str, Any]:
+        if app.openapi_schema is not None:
+            return app.openapi_schema
+        # FastAPI caches the returned dict, so the in-place edit is what later calls serve.
+        schema = default_openapi()
+        _use_problem_detail_for_422(schema)
+        return schema
+
+    app.openapi = openapi  # type: ignore[method-assign]
+
+
 def register_exception_handlers(app: FastAPI) -> None:
     app.add_exception_handler(DomainError, handle_domain_error)
     app.add_exception_handler(StarletteHTTPException, handle_http_exception)
     app.add_exception_handler(RequestValidationError, handle_validation_error)
     app.add_exception_handler(Exception, handle_unexpected_error)
+    # The validation handler replaces FastAPI's default body, so the schema must follow it.
+    document_validation_problems(app)

@@ -145,6 +145,7 @@ class AuthService:
                 display_name=user.display_name,
                 web_base_url=self._settings.web_base_url,
                 raw_token=raw,
+                ttl=RESET_TOKEN_TTL,
             )
 
     async def reset_password(self, raw_token: str, password: str) -> None:

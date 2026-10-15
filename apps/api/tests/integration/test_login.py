@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from investment_tracker.auth.passwords import hash_password
+from investment_tracker.auth.passwords import hash_password, verify_password_async
 from investment_tracker.auth.tokens import hash_token
 
 pytestmark = pytest.mark.integration
@@ -171,6 +171,32 @@ async def test_an_unverified_user_with_the_wrong_password_gets_invalid_credentia
 
     assert response.status_code == 401
     assert response.json()["code"] == "INVALID_CREDENTIALS"
+
+
+async def test_login_is_rejected_when_the_password_changes_while_it_is_checked(
+    client: httpx.AsyncClient, engine: AsyncEngine, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    user_id = await _create_user(engine)
+
+    async def verify_then_change_password(password_hash: str, password: str) -> bool:
+        result = await verify_password_async(password_hash, password)
+        async with engine.begin() as connection:
+            await connection.execute(
+                text("UPDATE app.users SET password_hash = :hash WHERE id = :user_id"),
+                {"hash": hash_password(WRONG_PASSWORD), "user_id": user_id},
+            )
+        return result
+
+    monkeypatch.setattr(
+        "investment_tracker.auth.service.verify_password_async", verify_then_change_password
+    )
+
+    response = await _login(client)
+
+    assert response.status_code == 401
+    assert response.json()["code"] == "INVALID_CREDENTIALS"
+    assert "set-cookie" not in response.headers
+    assert await _refresh_tokens(engine, user_id) == []
 
 
 def _comparable(response: httpx.Response) -> tuple[int, dict[str, object]]:

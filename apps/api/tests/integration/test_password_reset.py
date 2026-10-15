@@ -135,6 +135,54 @@ async def test_forgot_is_limited_to_three_per_minute_per_client_ip(
     assert other_ip.status_code == 202
 
 
+async def test_forgot_issues_at_most_three_reset_links_per_hour_per_email(
+    client: httpx.AsyncClient, engine: AsyncEngine, emails: RecordingEmailSender
+) -> None:
+    await _create_user(engine)
+    responses = [
+        await _forgot(client, "ana@example.com", ip=f"203.0.113.{30 + index}") for index in range(4)
+    ]
+    for response in responses:
+        assert response.status_code == 202
+        assert response.json() == {"status": "accepted"}
+
+    assert [message.to for message in emails.sent] == ["ana@example.com"] * 3
+    token_from_third_email = _reset_token(emails.sent[2].text)
+
+    fresh = await _reset(client, token_from_third_email)
+    assert fresh.status_code == 204
+
+
+async def test_forgot_per_email_cap_does_not_affect_other_emails(
+    client: httpx.AsyncClient, engine: AsyncEngine, emails: RecordingEmailSender
+) -> None:
+    await _create_user(engine)
+    await _create_user(engine, email="sofia@example.com")
+    for index in range(3):
+        response = await _forgot(client, "ana@example.com", ip=f"203.0.113.{40 + index}")
+        assert response.status_code == 202
+
+    response = await _forgot(client, "sofia@example.com", ip="203.0.113.44")
+
+    assert response.status_code == 202
+    assert [message.to for message in emails.sent] == ["ana@example.com"] * 3 + [
+        "sofia@example.com"
+    ]
+
+
+async def test_forgot_per_email_cap_ignores_case(
+    client: httpx.AsyncClient, engine: AsyncEngine, emails: RecordingEmailSender
+) -> None:
+    await _create_user(engine)
+    for index in range(3):
+        assert (
+            await _forgot(client, "Ana@Example.com", ip=f"203.0.113.{50 + index}")
+        ).status_code == 202
+
+    assert (await _forgot(client, "ana@example.com", ip="203.0.113.54")).status_code == 202
+    assert [message.to for message in emails.sent] == ["ana@example.com"] * 3
+
+
 async def test_reset_changes_the_password_and_revokes_every_session(
     client: httpx.AsyncClient, engine: AsyncEngine, emails: RecordingEmailSender
 ) -> None:

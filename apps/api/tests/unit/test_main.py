@@ -1,3 +1,4 @@
+import json
 import uuid
 
 import httpx
@@ -40,6 +41,26 @@ def test_openapi_schema_is_still_exportable_in_production() -> None:
     schema = production_app().openapi()
 
     assert schema["info"]["title"] == "Investment Tracker"
+
+
+def test_openapi_documents_validation_errors_as_problem_json() -> None:
+    schema = production_app().openapi()
+
+    login_422 = schema["paths"]["/api/v1/auth/login"]["post"]["responses"]["422"]
+    assert list(login_422["content"]) == ["application/problem+json"]
+    problem_ref = login_422["content"]["application/problem+json"]["schema"]["$ref"]
+    problem = schema["components"]["schemas"][problem_ref.rsplit("/", 1)[1]]
+    assert set(problem["properties"]) == {
+        "type",
+        "title",
+        "status",
+        "detail",
+        "code",
+        "request_id",
+        "errors",
+    }
+    assert "HTTPValidationError" not in json.dumps(schema)
+    assert "ValidationError" not in schema["components"]["schemas"]
 
 
 async def test_docs_are_served_outside_production(client: httpx.AsyncClient) -> None:
