@@ -19,6 +19,9 @@ KEY_VALUE_PATTERN = re.compile(
     r"(?:\"[^\"]*\"|'[^']*'|(?:Bearer\s+|Basic\s+)?[^\s,;&)}\]]+)",
     re.IGNORECASE,
 )
+JWT_PATTERN = re.compile(r"\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*")
+# Postgres constraint details, e.g. `Key (token_hash)=(...)`, escape KEY_VALUE_PATTERN.
+PG_KEY_DETAIL_PATTERN = re.compile(r"\(([^()]+)\)=\((.*?)\)(?=[\s.,;]|$)")
 LOGGER_NAMES = ("uvicorn", "uvicorn.error", "uvicorn.access")
 ACCESS_LOG_ARGS_COUNT = 5
 
@@ -28,8 +31,17 @@ def _is_sensitive_key(key: object) -> bool:
     return any(part in lowered for part in SENSITIVE_KEY_PARTS)
 
 
+def _mask_pg_key_detail(match: re.Match[str]) -> str:
+    columns = match[1]
+    if any(_is_sensitive_key(column) for column in columns.split(",")):
+        return f"({columns})=({REDACTED})"
+    return match[0]
+
+
 def _scrub_text(text: str) -> str:
-    masked = KEY_VALUE_PATTERN.sub(lambda match: f"{match[1]}{match[2]}{REDACTED}", text)
+    masked = PG_KEY_DETAIL_PATTERN.sub(_mask_pg_key_detail, text)
+    masked = KEY_VALUE_PATTERN.sub(lambda match: f"{match[1]}{match[2]}{REDACTED}", masked)
+    masked = JWT_PATTERN.sub(REDACTED, masked)
     return EMAIL_PATTERN.sub(REDACTED_EMAIL, masked)
 
 

@@ -70,6 +70,31 @@ def test_key_value_pairs_inside_free_text_are_redacted() -> None:
     assert result["other"] == "ok=1"
 
 
+def test_bare_jwt_inside_free_text_is_redacted() -> None:
+    jwt = "eyJhbGciOiJFZERTQSJ9.eyJzdWIiOiIxIn0.c2lnbmF0dXJl"
+
+    result = redact({"event": f"decode failed for {jwt} at edge", "path": "/a.b.c"})
+
+    assert result["event"] == "decode failed for [REDACTED] at edge"
+    assert result["path"] == "/a.b.c"
+
+
+def test_postgres_key_detail_masks_sensitive_columns_only() -> None:
+    result = redact(
+        {
+            "event": "DETAIL:  Key (token_hash)=(9f86d0) already exists.",
+            "unique": "Key (provider, provider_subject)=(google, 123) already exists.",
+            "mixed": "Key (provider, email)=(google, a@b.com) already exists.",
+            "contact": "Key (contact)=(a@b.com) already exists.",
+        }
+    )
+
+    assert result["event"] == "DETAIL:  Key (token_hash)=([REDACTED]) already exists."
+    assert result["unique"] == "Key (provider, provider_subject)=(google, 123) already exists."
+    assert result["mixed"] == "Key (provider, email)=([REDACTED]) already exists."
+    assert result["contact"] == "Key (contact)=([REDACTED_EMAIL]) already exists."
+
+
 def test_non_primitive_values_are_coerced_and_scrubbed() -> None:
     result = redact(
         {
