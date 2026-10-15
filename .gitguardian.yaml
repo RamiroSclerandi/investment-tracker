@@ -1,0 +1,6 @@
+version: 2
+secret:
+  ignored_paths:
+    - 'apps/api/tests/**/*'
+    - 'apps/web/src/**/*.test.ts'
+    - 'apps/web/src/**/*.test.tsx'
