@@ -95,6 +95,26 @@ def test_postgres_key_detail_masks_sensitive_columns_only() -> None:
     assert result["contact"] == "Key (contact)=([REDACTED_EMAIL]) already exists."
 
 
+def test_postgres_failing_row_detail_is_redacted() -> None:
+    detail = (
+        'null value in column "email" violates not-null constraint\n'
+        "DETAIL:  Failing row contains (1, $argon2id$v=19$m=65536,t=3,p=4$c2FsdA$aGFzaA, null).\n"
+        "next line"
+    )
+
+    result = redact({"event": detail})
+
+    assert "argon2id" not in result["event"]
+    assert "DETAIL:  Failing row contains ([REDACTED]).\nnext line" in result["event"]
+
+
+def test_quoted_postgres_key_detail_is_redacted() -> None:
+    result = redact({"event": "IntegrityError('Key (token_hash)=(abc)')", "list": "[(token)=(x)]"})
+
+    assert result["event"] == "IntegrityError('Key (token_hash)=([REDACTED])')"
+    assert result["list"] == "[(token)=([REDACTED])]"
+
+
 def test_non_primitive_values_are_coerced_and_scrubbed() -> None:
     result = redact(
         {

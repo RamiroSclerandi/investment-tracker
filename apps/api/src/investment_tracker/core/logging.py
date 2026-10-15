@@ -21,7 +21,9 @@ KEY_VALUE_PATTERN = re.compile(
 )
 JWT_PATTERN = re.compile(r"\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*")
 # Postgres constraint details, e.g. `Key (token_hash)=(...)`, escape KEY_VALUE_PATTERN.
-PG_KEY_DETAIL_PATTERN = re.compile(r"\(([^()]+)\)=\((.*?)\)(?=[\s.,;]|$)")
+PG_KEY_DETAIL_PATTERN = re.compile(r"\(([^()]+)\)=\(([^)\n]*)\)")
+# NOT NULL/CHECK violations echo the whole row, password and token hashes included.
+PG_FAILING_ROW_PATTERN = re.compile(r"(Failing row contains )\(.*\)", re.IGNORECASE)
 LOGGER_NAMES = ("uvicorn", "uvicorn.error", "uvicorn.access")
 ACCESS_LOG_ARGS_COUNT = 5
 
@@ -39,7 +41,8 @@ def _mask_pg_key_detail(match: re.Match[str]) -> str:
 
 
 def _scrub_text(text: str) -> str:
-    masked = PG_KEY_DETAIL_PATTERN.sub(_mask_pg_key_detail, text)
+    masked = PG_FAILING_ROW_PATTERN.sub(rf"\1({REDACTED})", text)
+    masked = PG_KEY_DETAIL_PATTERN.sub(_mask_pg_key_detail, masked)
     masked = KEY_VALUE_PATTERN.sub(lambda match: f"{match[1]}{match[2]}{REDACTED}", masked)
     masked = JWT_PATTERN.sub(REDACTED, masked)
     return EMAIL_PATTERN.sub(REDACTED_EMAIL, masked)
