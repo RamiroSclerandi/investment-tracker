@@ -56,11 +56,15 @@ class KeyedRateLimiter:
         if not self._strategy.hit(self._item, key):
             raise KeyedRateLimitExceededError
 
+    def allow(self, key: str) -> bool:
+        return self._strategy.hit(self._item, key)
+
     def reset(self) -> None:
         self._storage.reset()
 
 
 login_limiter = KeyedRateLimiter("5/minute")
+forgot_email_limiter = KeyedRateLimiter("3/hour")
 
 
 async def handle_rate_limit_exceeded(request: Request, exc: Exception) -> JSONResponse:
