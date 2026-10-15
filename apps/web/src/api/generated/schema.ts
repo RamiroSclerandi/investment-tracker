@@ -235,11 +235,6 @@ export interface components {
              */
             email: string;
         };
-        /** HTTPValidationError */
-        HTTPValidationError: {
-            /** Detail */
-            detail?: components["schemas"]["ValidationError"][];
-        };
         /** HealthStatus */
         HealthStatus: {
             /**
@@ -257,6 +252,23 @@ export interface components {
             email: string;
             /** Password */
             password: string;
+        };
+        /** ProblemDetail */
+        ProblemDetail: {
+            /** Code */
+            code: string;
+            /** Detail */
+            detail: string;
+            /** Errors */
+            errors: components["schemas"]["ValidationIssue"][];
+            /** Request Id */
+            request_id: string;
+            /** Status */
+            status: number;
+            /** Title */
+            title: string;
+            /** Type */
+            type: string;
         };
         /** ProfileResponse */
         ProfileResponse: {
@@ -319,18 +331,12 @@ export interface components {
             display_name?: string | null;
             preferred_currency?: components["schemas"]["Currency"] | null;
         };
-        /** ValidationError */
-        ValidationError: {
-            /** Context */
-            ctx?: Record<string, never>;
-            /** Input */
-            input?: unknown;
-            /** Location */
+        /** ValidationIssue */
+        ValidationIssue: {
+            /** Loc */
             loc: (string | number)[];
-            /** Message */
+            /** Msg */
             msg: string;
-            /** Error Type */
-            type: string;
         };
         /** VerifiedResponse */
         VerifiedResponse: {
@@ -385,7 +391,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
         };
@@ -414,7 +420,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
         };
@@ -485,7 +491,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
         };
@@ -518,7 +524,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
         };
@@ -549,7 +555,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
         };
@@ -580,7 +586,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
         };
@@ -613,7 +619,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
         };
@@ -646,7 +652,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
         };
@@ -679,7 +685,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/problem+json": components["schemas"]["ProblemDetail"];
                 };
             };
         };
