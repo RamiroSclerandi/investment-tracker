@@ -35,6 +35,8 @@ class Settings(BaseSettings):
     jwt_private_key: SecretStr | None = None
     jwt_issuer: str = "investment-tracker"
     jwt_audience: str = "investment-tracker-web"
+    google_client_id: str | None = None
+    google_client_secret: SecretStr | None = None
 
     @field_validator("web_base_url")
     @classmethod

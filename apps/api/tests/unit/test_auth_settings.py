@@ -122,3 +122,15 @@ def test_a_jwt_private_key_that_is_not_an_ed25519_pem_is_rejected(
         )
 
     assert pem not in str(excinfo.value)
+
+
+def test_production_boots_without_google_credentials() -> None:
+    settings = Settings(
+        database_url=DATABASE_URL,
+        environment="production",
+        jwt_private_key=JWT_PRIVATE_KEY,
+        _env_file=None,
+    )
+
+    assert settings.google_client_id is None
+    assert settings.google_client_secret is None

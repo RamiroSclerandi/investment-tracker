@@ -1,3 +1,8 @@
+import base64
+import hashlib
+import hmac
+import re
+import secrets
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -15,11 +20,20 @@ from investment_tracker.auth.errors import (
     InvalidRefreshTokenError,
     UnauthorizedError,
 )
+from investment_tracker.auth.google import (
+    GoogleIdentity,
+    GoogleIdentityProvider,
+    GoogleSignInError,
+    OidcStateCodec,
+    PendingSignIn,
+)
 from investment_tracker.auth.jwt import AccessTokens
 from investment_tracker.auth.models import (
     Currency,
     EmailToken,
     EmailTokenPurpose,
+    OAuthAccount,
+    OAuthProvider,
     RefreshToken,
     User,
 )
@@ -30,6 +44,7 @@ from investment_tracker.auth.passwords import (
 )
 from investment_tracker.auth.repository import (
     EmailTokenRepository,
+    OAuthAccountRepository,
     RefreshTokenRepository,
     UserRepository,
 )
@@ -42,6 +57,9 @@ RESET_TOKEN_TTL = timedelta(minutes=30)
 REFRESH_TOKEN_TTL = timedelta(days=30)
 SESSION_MAX_LIFETIME = timedelta(days=60)
 USER_AGENT_MAX_LENGTH = 256
+DISPLAY_NAME_MAX_LENGTH = 80
+# Mirrors the display name pattern accepted from clients: no control or line separator chars.
+DISPLAY_NAME_FORBIDDEN_CHARS = re.compile(r"[\x00-\x1f\x7f\x85\u2028\u2029]")
 
 logger = structlog.get_logger()
 
@@ -341,15 +359,149 @@ class SessionService:
         ip: str | None,
     ) -> None:
         self._refresh_tokens.add(
-            RefreshToken(
-                user_id=user_id,
-                family_id=family_id,
-                token_hash=token_hash,
-                expires_at=expires_at,
-                user_agent=user_agent[:USER_AGENT_MAX_LENGTH] if user_agent else None,
-                ip=ip,
+            new_refresh_token(user_id, family_id, token_hash, expires_at, user_agent, ip)
+        )
+
+
+def new_refresh_token(
+    user_id: uuid.UUID,
+    family_id: uuid.UUID,
+    token_hash: str,
+    expires_at: datetime,
+    user_agent: str | None,
+    ip: str | None,
+) -> RefreshToken:
+    return RefreshToken(
+        user_id=user_id,
+        family_id=family_id,
+        token_hash=token_hash,
+        expires_at=expires_at,
+        user_agent=user_agent[:USER_AGENT_MAX_LENGTH] if user_agent else None,
+        ip=ip,
+    )
+
+
+def sanitize_display_name(name: str | None) -> str:
+    if name is None:
+        return ""
+    cleaned = " ".join(DISPLAY_NAME_FORBIDDEN_CHARS.sub(" ", name).split())
+    return cleaned[:DISPLAY_NAME_MAX_LENGTH].strip()
+
+
+def start_google_sign_in(
+    google: GoogleIdentityProvider, state_codec: OidcStateCodec
+) -> tuple[str, str]:
+    pending = PendingSignIn(
+        state=secrets.token_urlsafe(32),
+        nonce=secrets.token_urlsafe(32),
+        code_verifier=secrets.token_urlsafe(64),
+    )
+    digest = hashlib.sha256(pending.code_verifier.encode()).digest()
+    challenge = base64.urlsafe_b64encode(digest).rstrip(b"=").decode()
+    url = google.authorization_url(
+        state=pending.state, nonce=pending.nonce, code_challenge=challenge
+    )
+    return url, state_codec.encode(pending)
+
+
+class GoogleSignInService:
+    def __init__(
+        self,
+        session: AsyncSession,
+        google: GoogleIdentityProvider,
+        state_codec: OidcStateCodec,
+    ) -> None:
+        self._session = session
+        self._google = google
+        self._state_codec = state_codec
+        self._users = UserRepository(session)
+        self._accounts = OAuthAccountRepository(session)
+        self._tokens = EmailTokenRepository(session)
+        self._refresh_tokens = RefreshTokenRepository(session)
+
+    async def complete(
+        self,
+        *,
+        cookie: str | None,
+        state: str | None,
+        code: str | None,
+        error: str | None,
+        user_agent: str | None,
+        ip: str | None,
+    ) -> str:
+        pending = self._state_codec.decode(cookie)
+        if not state or not hmac.compare_digest(state.encode(), pending.state.encode()):
+            raise GoogleSignInError("state_mismatch")
+        if error or not code:
+            raise GoogleSignInError("provider_error")
+        identity = await self._google.exchange(
+            code, code_verifier=pending.code_verifier, nonce=pending.nonce
+        )
+        if not identity.email_verified:
+            raise GoogleSignInError("email_not_verified")
+        try:
+            return await self._start_session(identity, user_agent, ip)
+        except IntegrityError:
+            pass
+        # A concurrent first sign-in inserted the same email or subject; the retry finds it.
+        try:
+            return await self._start_session(identity, user_agent, ip)
+        except IntegrityError:
+            raise GoogleSignInError("concurrent_link_conflict") from None
+
+    async def _start_session(
+        self, identity: GoogleIdentity, user_agent: str | None, ip: str | None
+    ) -> str:
+        raw, token_hash = new_token()
+        async with self._session.begin():
+            user = await self._resolve_user(identity)
+            if user is not None:
+                expires_at = datetime.now(UTC) + REFRESH_TOKEN_TTL
+                self._refresh_tokens.add(
+                    new_refresh_token(user.id, uuid.uuid4(), token_hash, expires_at, user_agent, ip)
+                )
+        if user is None:
+            raise GoogleSignInError("inactive_user")
+        return raw
+
+    async def _resolve_user(self, identity: GoogleIdentity) -> User | None:
+        account = await self._accounts.get(OAuthProvider.GOOGLE, identity.subject)
+        if account is not None:
+            linked = await self._users.get_for_update(account.user_id)
+            return linked if linked is not None and linked.is_active else None
+        now = datetime.now(UTC)
+        user = await self._users.get_by_email_for_update(identity.email)
+        if user is None:
+            user = User(
+                email=identity.email,
+                password_hash=None,
+                email_verified_at=now,
+                display_name=sanitize_display_name(identity.name)
+                or sanitize_display_name(identity.email.split("@")[0]),
+            )
+            await self._users.add(user)
+        elif not user.is_active:
+            return None
+        elif user.email_verified_at is None:
+            await self._claim_unverified(user, identity, now)
+        await self._accounts.add(
+            OAuthAccount(
+                user_id=user.id,
+                provider=OAuthProvider.GOOGLE,
+                provider_subject=identity.subject,
+                email=identity.email,
             )
         )
+        return user
+
+    async def _claim_unverified(self, user: User, identity: GoogleIdentity, now: datetime) -> None:
+        # Whoever registered first may not own the mailbox, so nothing they chose survives.
+        user.email_verified_at = now
+        user.password_hash = None
+        user.display_name = sanitize_display_name(identity.name) or user.display_name
+        await self._tokens.invalidate_active(user.id, EmailTokenPurpose.VERIFY_EMAIL, now)
+        await self._refresh_tokens.lock_all_for_user(user.id)
+        await self._refresh_tokens.revoke_all_for_user(user.id, now)
 
 
 class ProfileService:

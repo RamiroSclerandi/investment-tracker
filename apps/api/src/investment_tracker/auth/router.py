@@ -3,7 +3,7 @@ from typing import Annotated, Literal, Self
 
 import structlog
 from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints, model_validator
 
 from investment_tracker.auth.dependencies import (
@@ -11,13 +11,16 @@ from investment_tracker.auth.dependencies import (
     SessionServiceDep,
     require_csrf_header,
 )
-from investment_tracker.auth.errors import InvalidRefreshTokenError
+from investment_tracker.auth.errors import InvalidRefreshTokenError, OidcUnavailableError
+from investment_tracker.auth.google import GoogleIdentityProvider, GoogleSignInError
 from investment_tracker.auth.models import Currency, User
 from investment_tracker.auth.service import (
     REFRESH_TOKEN_TTL,
     AuthService,
+    GoogleSignInService,
     IssuedSession,
     ProfileService,
+    start_google_sign_in,
 )
 from investment_tracker.core.db import SessionDep
 from investment_tracker.core.email import EmailDeliveryError, EmailMessage, EmailSender
@@ -37,6 +40,9 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 REFRESH_COOKIE_NAME = "it_rt"
 REFRESH_COOKIE_PATH = "/api/v1/auth"
 NO_STORE = {"Cache-Control": "no-store"}
+OIDC_COOKIE_NAME = "it_oidc"
+OIDC_COOKIE_PATH = "/api/v1/auth/google"
+OIDC_COOKIE_MAX_AGE_SECONDS = 600
 
 
 Password = Annotated[str, Field(min_length=12, max_length=128)]
@@ -128,6 +134,26 @@ def get_profile_service(session: SessionDep) -> ProfileService:
 
 
 ProfileServiceDep = Annotated[ProfileService, Depends(get_profile_service)]
+
+
+def get_google(request: Request) -> GoogleIdentityProvider:
+    google: GoogleIdentityProvider | None = request.app.state.google
+    if google is None:
+        raise OidcUnavailableError
+    return google
+
+
+GoogleDep = Annotated[GoogleIdentityProvider, Depends(get_google)]
+
+
+# The Google dependency comes first so an unconfigured app answers 503 before opening a session.
+def get_google_sign_in_service(
+    request: Request, google: GoogleDep, session: SessionDep
+) -> GoogleSignInService:
+    return GoogleSignInService(session, google, request.app.state.oidc_state)
+
+
+GoogleSignInServiceDep = Annotated[GoogleSignInService, Depends(get_google_sign_in_service)]
 
 
 def set_refresh_cookie(response: Response, refresh_token: str) -> None:
@@ -303,6 +329,62 @@ async def logout(request: Request, service: SessionServiceDep) -> Response:
 async def logout_all(user: CurrentUserDep, service: SessionServiceDep) -> Response:
     await service.logout_all(user.id)
     return empty_response_clearing_cookie()
+
+
+def oidc_redirect(location: str) -> RedirectResponse:
+    response = RedirectResponse(location, status_code=status.HTTP_302_FOUND, headers=NO_STORE)
+    response.delete_cookie(
+        OIDC_COOKIE_NAME, path=OIDC_COOKIE_PATH, secure=True, httponly=True, samesite="lax"
+    )
+    return response
+
+
+@router.get("/google/start", response_class=RedirectResponse, status_code=status.HTTP_302_FOUND)
+@limiter.limit("10/minute")
+async def google_start(request: Request, google: GoogleDep) -> RedirectResponse:
+    authorization_url, cookie = start_google_sign_in(google, request.app.state.oidc_state)
+    response = RedirectResponse(
+        authorization_url, status_code=status.HTTP_302_FOUND, headers=NO_STORE
+    )
+    # Lax, not Strict: Google returns through a cross-site top-level navigation.
+    response.set_cookie(
+        OIDC_COOKIE_NAME,
+        cookie,
+        max_age=OIDC_COOKIE_MAX_AGE_SECONDS,
+        path=OIDC_COOKIE_PATH,
+        secure=True,
+        httponly=True,
+        samesite="lax",
+    )
+    return response
+
+
+@router.get("/google/callback", response_class=RedirectResponse, status_code=status.HTTP_302_FOUND)
+@limiter.limit("10/minute")
+async def google_callback(
+    request: Request,
+    service: GoogleSignInServiceDep,
+    code: str | None = None,
+    state: str | None = None,
+    error: str | None = None,
+) -> RedirectResponse:
+    complete_url = f"{request.app.state.settings.web_base_url}/auth/complete"
+    user_agent, ip = client_details(request)
+    try:
+        refresh_token = await service.complete(
+            cookie=request.cookies.get(OIDC_COOKIE_NAME),
+            state=state,
+            code=code,
+            error=error,
+            user_agent=user_agent,
+            ip=ip,
+        )
+    except GoogleSignInError as exc:
+        logger.warning("google_sign_in_failed", reason=exc.reason)
+        return oidc_redirect(f"{complete_url}#error=oauth_failed")
+    response = oidc_redirect(complete_url)
+    set_refresh_cookie(response, refresh_token)
+    return response
 
 
 @router.get("/me")
