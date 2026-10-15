@@ -2,6 +2,7 @@ import asyncio
 
 import httpx
 import pytest
+import structlog.testing
 from fastapi import FastAPI
 
 from investment_tracker.auth import passwords
@@ -48,4 +49,24 @@ async def test_a_saturated_argon2_pool_answers_503_problem_json(
 
     assert response.status_code == 503
     assert response.headers["content-type"] == "application/problem+json"
+    assert response.headers["retry-after"] == "5"
     assert response.json()["code"] == "SERVICE_BUSY"
+
+
+@pytest.mark.usefixtures("saturated_argon2")
+async def test_a_saturated_argon2_pool_logs_one_event_without_credentials(
+    app: FastAPI, client: httpx.AsyncClient
+) -> None:
+    @app.get("/hash")
+    async def hash_route() -> None:
+        await passwords.hash_password_async("correct horse battery")
+
+    with structlog.testing.capture_logs() as logs:
+        response = await client.get("/hash")
+
+    assert response.status_code == 503
+    events = [log for log in logs if log.get("event") == "argon2_capacity_exhausted"]
+    assert len(events) == 1
+    assert events[0]["log_level"] == "warning"
+    assert "email" not in events[0]
+    assert "password" not in events[0]

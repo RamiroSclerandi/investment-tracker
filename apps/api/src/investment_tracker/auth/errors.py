@@ -1,7 +1,10 @@
+import structlog
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
 from investment_tracker.core.errors import DomainError, problem_response
+
+logger = structlog.get_logger()
 
 
 class InvalidEmailTokenError(DomainError):
@@ -56,6 +59,17 @@ class PasswordHashingBusyError(DomainError):
 
     def __init__(self) -> None:
         super().__init__("The service is busy. Try again in a few seconds.")
+
+
+async def handle_password_hashing_busy(request: Request, exc: Exception) -> JSONResponse:
+    if not isinstance(exc, PasswordHashingBusyError):
+        raise exc
+    logger.warning("argon2_capacity_exhausted")
+    response = problem_response(
+        request, status=exc.status, title=exc.title, detail=str(exc), code=exc.code
+    )
+    response.headers["Retry-After"] = "5"
+    return response
 
 
 class InvalidAccessTokenError(Exception):

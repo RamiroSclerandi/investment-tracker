@@ -7,7 +7,9 @@ from fastapi import APIRouter, FastAPI
 
 from investment_tracker.auth.errors import (
     InvalidRefreshTokenError,
+    PasswordHashingBusyError,
     UnauthorizedError,
+    handle_password_hashing_busy,
     handle_unauthorized,
 )
 from investment_tracker.auth.jwt import AccessTokens
@@ -75,6 +77,7 @@ def create_app(settings: Settings, email_sender: EmailSender | None = None) -> F
     register_exception_handlers(app)
     app.add_exception_handler(UnauthorizedError, handle_unauthorized)
     app.add_exception_handler(InvalidRefreshTokenError, handle_invalid_refresh_token)
+    app.add_exception_handler(PasswordHashingBusyError, handle_password_hashing_busy)
     register_rate_limiting(app)
     api_router = APIRouter(prefix=API_PREFIX)
     api_router.include_router(ops_router)
