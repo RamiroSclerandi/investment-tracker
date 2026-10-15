@@ -40,8 +40,24 @@ def upgrade() -> None:
         $$
         """
     )
-    # The role is cluster-wide and may predate this migration with unsafe attributes.
-    op.execute("ALTER ROLE app_rw NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE NOINHERIT")
+    # The role is cluster-wide, and the migration role may not be allowed to alter these attributes.
+    op.execute(
+        """
+        DO $$
+        BEGIN
+            IF EXISTS (
+                SELECT 1 FROM pg_roles WHERE rolname = 'app_rw'
+                    AND (rolsuper OR rolbypassrls OR rolcreatedb OR rolcreaterole)
+            ) THEN
+                RAISE EXCEPTION 'app_rw already exists with unsafe attributes'
+                    USING HINT = 'As a superuser or a role holding those attributes, run'
+                        ' ALTER ROLE app_rw NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE,'
+                        ' then retry.';
+            END IF;
+        END
+        $$
+        """
+    )
     _revoke_exposed_roles()
     op.execute("GRANT USAGE ON SCHEMA app TO app_rw")
     # Supabase installs citext in "extensions"; elsewhere it lives in "public".

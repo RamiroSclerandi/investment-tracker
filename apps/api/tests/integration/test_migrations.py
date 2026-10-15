@@ -5,6 +5,7 @@ import pytest
 from alembic import command
 from alembic.config import Config
 from sqlalchemy import text
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import create_async_engine
 
 from tests.integration.conftest import enable_app_role_login
@@ -39,7 +40,7 @@ async def _run_as_owner(database_url: str, *statements: str) -> list[object]:
     return results
 
 
-def test_upgrade_strips_dangerous_attributes_from_a_pre_existing_app_role(
+def test_upgrade_refuses_a_pre_existing_app_role_with_unsafe_attributes(
     database_url: str, app_role_password: str, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("DATABASE_URL", database_url)
@@ -50,23 +51,25 @@ def test_upgrade_strips_dangerous_attributes_from_a_pre_existing_app_role(
         _run_as_owner(
             database_url,
             "DO $$ BEGIN IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'app_rw') THEN"
-            " ALTER ROLE app_rw BYPASSRLS CREATEDB CREATEROLE INHERIT;"
-            " ELSE CREATE ROLE app_rw BYPASSRLS CREATEDB CREATEROLE INHERIT; END IF; END $$",
+            " ALTER ROLE app_rw BYPASSRLS;"
+            " ELSE CREATE ROLE app_rw BYPASSRLS; END IF; END $$",
         )
     )
 
+    with pytest.raises(DBAPIError, match="app_rw"):
+        command.upgrade(config, "head")
+
+    asyncio.run(
+        _run_as_owner(database_url, "ALTER ROLE app_rw NOBYPASSRLS NOCREATEDB NOCREATEROLE")
+    )
     command.upgrade(config, "head")
     asyncio.run(enable_app_role_login(database_url, app_role_password))
-
-    [attributes, global_function_defaults] = asyncio.run(
+    [global_function_defaults] = asyncio.run(
         _run_as_owner(
             database_url,
-            "SELECT ARRAY[rolsuper, rolbypassrls, rolcreatedb, rolcreaterole, rolinherit]"
-            " FROM pg_roles WHERE rolname = 'app_rw'",
             "SELECT count(*) FROM pg_default_acl WHERE defaclnamespace = 0"
             " AND defaclobjtype = 'f' AND defaclrole = current_user::regrole",
         )
     )
-    assert attributes == [False, False, False, False, False]
     # A global default would change every future owner function in every schema.
     assert global_function_defaults == 0
