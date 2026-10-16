@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
+import { hashParams } from '@/features/auth/hash-token'
 import { getAuthStatus, refreshSessionOutcome } from '@/features/auth/session'
 
 const GOOGLE_START_URL = '/api/v1/auth/google/start'
@@ -10,7 +11,7 @@ export function AuthCompletePage() {
   const navigate = useNavigate()
   const hash = useLocation({ select: (location) => location.hash })
   const [phase, setPhase] = useState<Phase>(() =>
-    new URLSearchParams(hash).has('error') ? 'failed' : 'connecting',
+    hashParams(hash).has('error') ? 'failed' : 'connecting',
   )
 
   useEffect(() => {

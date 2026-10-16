@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { tokenFromHash } from '@/features/auth/hash-token'
+import { hashParams, tokenFromHash } from '@/features/auth/hash-token'
+
+describe('hashParams', () => {
+  it('reads parameters whether or not the hash keeps its leading #', () => {
+    expect(hashParams('#error=oauth_failed').get('error')).toBe('oauth_failed')
+    expect(hashParams('error=oauth_failed').get('error')).toBe('oauth_failed')
+  })
+})
 
 describe('tokenFromHash', () => {
   it('reads the token when the hash keeps its leading #', () => {
