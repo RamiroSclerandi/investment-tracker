@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { fireEvent, screen } from '@testing-library/react'
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
 import { renderApp } from '@/test/render-app'
@@ -42,6 +42,26 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Ingresá a tu cuenta' })).toBeInTheDocument()
     expect(router.state.location.pathname).toBe('/login')
     expect(screen.queryByRole('heading', { name: 'Dashboard' })).not.toBeInTheDocument()
+  })
+
+  it('offers a retry instead of redirecting when the boot refresh fails transiently', async () => {
+    let refreshes = 0
+    server.use(
+      http.post('*/api/v1/auth/refresh', () => {
+        refreshes += 1
+        if (refreshes === 1) return new HttpResponse(null, { status: 503 })
+        return HttpResponse.json({ access_token: 'token', expires_in: 900, token_type: 'Bearer' })
+      }),
+    )
+    const { router, session } = await renderApp('/')
+
+    await session.refreshSession()
+
+    expect(await screen.findByRole('heading', { name: 'No pudimos conectar' })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/')
+    fireEvent.click(screen.getByRole('button', { name: 'Reintentar' }))
+    expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument()
+    expect(refreshes).toBe(2)
   })
 
   it('shows the loading state without redirecting while the session is unknown', async () => {

@@ -1,7 +1,7 @@
 import createClient from 'openapi-fetch'
 import type { paths } from '@/api/generated/schema'
 
-export type AuthStatus = 'loading' | 'authenticated' | 'anonymous'
+export type AuthStatus = 'loading' | 'authenticated' | 'anonymous' | 'unavailable'
 
 const CSRF_HEADER = { 'x-requested-with': 'investment-tracker' }
 const REFRESH_LOCK = 'it-refresh'
@@ -31,12 +31,15 @@ export function subscribeAuthStatus(listener: () => void): () => void {
   return () => listeners.delete(listener)
 }
 
-function setAccessToken(token: string | null) {
-  accessToken = token
-  const nextStatus = token === null ? 'anonymous' : 'authenticated'
+function setStatus(nextStatus: AuthStatus) {
   if (nextStatus === status) return
   status = nextStatus
   listeners.forEach((listener) => listener())
+}
+
+function setAccessToken(token: string | null) {
+  accessToken = token
+  setStatus(token === null ? 'anonymous' : 'authenticated')
 }
 
 // Tabs refreshing at once would present the same it_rt; the API treats the second as reuse and revokes the family.
@@ -77,7 +80,9 @@ async function requestAccessToken(): Promise<RefreshOutcome> {
   const startedAt = sessionGeneration
   const token = await fetchAccessToken()
   if (startedAt !== sessionGeneration) return 'rejected'
-  if (token !== undefined || accessToken === null) setAccessToken(token ?? null)
+  if (token !== undefined) setAccessToken(token)
+  // Without a held token a transient failure proves nothing either way, so the user is not sent to log in.
+  else if (status === 'loading') setStatus('unavailable')
   if (token === undefined) return 'unavailable'
   return token === null ? 'rejected' : 'refreshed'
 }
@@ -87,6 +92,7 @@ export function getPendingRefresh(): Promise<RefreshOutcome> | null {
 }
 
 export function refreshSessionOutcome(): Promise<RefreshOutcome> {
+  if (pendingRefresh === null && status === 'unavailable') setStatus('loading')
   pendingRefresh ??= requestAccessToken().finally(() => {
     pendingRefresh = null
   })

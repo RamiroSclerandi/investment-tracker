@@ -86,20 +86,32 @@ describe('silent refresh on boot', () => {
     expect(modules.session.getAccessToken()).toBeNull()
   })
 
-  it('treats a network failure during refresh as signed out', async () => {
+  it('marks the session unavailable on a network failure during the boot refresh', async () => {
     server.use(http.post(REFRESH_URL, () => HttpResponse.error()))
 
     await expect(modules.session.refreshSession()).resolves.toBe(false)
 
-    expect(modules.session.getAuthStatus()).toBe('anonymous')
+    expect(modules.session.getAuthStatus()).toBe('unavailable')
   })
 
-  it('treats a server error during the boot refresh as signed out', async () => {
+  it('moves an unavailable session back to loading while a retry runs', async () => {
+    server.use(http.post(REFRESH_URL, () => new HttpResponse(null, { status: 503 })))
+    await modules.session.refreshSession()
+    issueTokens('retry-token')
+
+    const retry = modules.session.refreshSession()
+
+    expect(modules.session.getAuthStatus()).toBe('loading')
+    await retry
+    expect(modules.session.getAuthStatus()).toBe('authenticated')
+  })
+
+  it('marks the session unavailable on a server error during the boot refresh', async () => {
     server.use(http.post(REFRESH_URL, () => new HttpResponse(null, { status: 503 })))
 
     await expect(modules.session.refreshSession()).resolves.toBe(false)
 
-    expect(modules.session.getAuthStatus()).toBe('anonymous')
+    expect(modules.session.getAuthStatus()).toBe('unavailable')
   })
 })
 
@@ -203,7 +215,7 @@ describe('malformed or hung refreshes', () => {
 
     await expect(modules.session.refreshSession()).resolves.toBe(false)
 
-    expect(modules.session.getAuthStatus()).toBe('anonymous')
+    expect(modules.session.getAuthStatus()).toBe('unavailable')
   })
 
   it('return the original 401 when the retry refresh answers with a non-JSON body', async () => {
@@ -226,7 +238,7 @@ describe('malformed or hung refreshes', () => {
     await vi.advanceTimersByTimeAsync(10_000)
 
     await expect(refresh).resolves.toBe(false)
-    expect(modules.session.getAuthStatus()).toBe('anonymous')
+    expect(modules.session.getAuthStatus()).toBe('unavailable')
   })
 
   it('send a request with the current token once a hung refresh exceeds the wait bound', async () => {
