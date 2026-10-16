@@ -41,20 +41,27 @@ function withRefreshLock<T>(task: () => Promise<T>): Promise<T> {
   return navigator.locks.request(REFRESH_LOCK, task)
 }
 
-async function requestAccessToken(): Promise<boolean> {
+// Resolves the new token, null when the API rejects the session, or undefined on a transient failure.
+async function fetchAccessToken(): Promise<string | null | undefined> {
   try {
-    const { data } = await withRefreshLock(() =>
+    const { data, response } = await withRefreshLock(() =>
       sessionClient.POST('/api/v1/auth/refresh', {
         params: { header: CSRF_HEADER },
         credentials: 'same-origin',
       }),
     )
-    setAccessToken(data?.access_token ?? null)
+    if (data) return data.access_token
+    return response.status === 401 ? null : undefined
   } catch (error) {
     if (!(error instanceof TypeError)) throw error
-    setAccessToken(null)
+    return undefined
   }
-  return accessToken !== null
+}
+
+async function requestAccessToken(): Promise<boolean> {
+  const token = await fetchAccessToken()
+  if (token !== undefined || accessToken === null) setAccessToken(token ?? null)
+  return typeof token === 'string'
 }
 
 export function refreshSession(): Promise<boolean> {

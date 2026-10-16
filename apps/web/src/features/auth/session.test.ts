@@ -93,6 +93,55 @@ describe('silent refresh on boot', () => {
 
     expect(modules.session.getAuthStatus()).toBe('anonymous')
   })
+
+  it('treats a server error during the boot refresh as signed out', async () => {
+    server.use(http.post(REFRESH_URL, () => new HttpResponse(null, { status: 503 })))
+
+    await expect(modules.session.refreshSession()).resolves.toBe(false)
+
+    expect(modules.session.getAuthStatus()).toBe('anonymous')
+  })
+})
+
+describe('refresh failures with a session in place', () => {
+  beforeEach(async () => {
+    issueTokens('held-token')
+    await modules.session.refreshSession()
+  })
+
+  it.each([
+    ['a server error', () => new HttpResponse(null, { status: 503 })],
+    ['rate limiting', () => new HttpResponse(null, { status: 429 })],
+    ['a network failure', () => HttpResponse.error()],
+  ])('keep the token and the authenticated status on %s', async (_, respond) => {
+    server.use(http.post(REFRESH_URL, respond))
+
+    await expect(modules.session.refreshSession()).resolves.toBe(false)
+
+    expect(modules.session.getAccessToken()).toBe('held-token')
+    expect(modules.session.getAuthStatus()).toBe('authenticated')
+  })
+
+  it('clear the token when the refresh is rejected', async () => {
+    server.use(http.post(REFRESH_URL, () => new HttpResponse(null, { status: 401 })))
+
+    await expect(modules.session.refreshSession()).resolves.toBe(false)
+
+    expect(modules.session.getAccessToken()).toBeNull()
+    expect(modules.session.getAuthStatus()).toBe('anonymous')
+  })
+
+  it('return the original 401 and keep the session when the retry refresh fails transiently', async () => {
+    const authorizations = profileAcceptingOnly('never-issued')
+    server.use(http.post(REFRESH_URL, () => new HttpResponse(null, { status: 503 })))
+
+    const { response } = await modules.apiClient.GET('/api/v1/auth/me')
+
+    expect(response.status).toBe(401)
+    expect(authorizations).toEqual(['Bearer held-token'])
+    expect(modules.session.getAccessToken()).toBe('held-token')
+    expect(modules.session.getAuthStatus()).toBe('authenticated')
+  })
 })
 
 function installFakeLocks() {
