@@ -1,9 +1,10 @@
 import { createRoute } from '@tanstack/react-router'
 import { AuthLayout } from '@/components/auth-layout'
-import { PlaceholderPage } from '@/components/placeholder-page'
 import { AuthCompletePage } from '@/features/auth/auth-complete-page'
+import { ForgotPasswordPage } from '@/features/auth/forgot-password-page'
 import { LoginPage } from '@/features/auth/login-page'
 import { RegisterPage } from '@/features/auth/register-page'
+import { ResetPasswordPage } from '@/features/auth/reset-password-page'
 import { VerifyEmailPage } from '@/features/auth/verify-email-page'
 import { rootRoute } from '@/routes/__root'
 
@@ -12,11 +13,6 @@ export const authLayoutRoute = createRoute({
   id: 'auth',
   component: AuthLayout,
 })
-
-const AUTH_PAGES = [
-  { path: '/forgot-password', title: 'Forgot password' },
-  { path: '/reset-password', title: 'Reset password' },
-] as const
 
 const authCompleteRoute = createRoute({
   getParentRoute: () => authLayoutRoute,
@@ -27,8 +23,10 @@ const authCompleteRoute = createRoute({
 const loginRoute = createRoute({
   getParentRoute: () => authLayoutRoute,
   path: '/login',
-  validateSearch: (search: Record<string, unknown>): { verified?: true } =>
-    search.verified === true ? { verified: true } : {},
+  validateSearch: (search: Record<string, unknown>): { verified?: true; reset?: true } => ({
+    ...(search.verified === true ? { verified: true } : {}),
+    ...(search.reset === true ? { reset: true } : {}),
+  }),
   component: LoginPage,
 })
 
@@ -44,16 +42,23 @@ const verifyEmailRoute = createRoute({
   component: VerifyEmailPage,
 })
 
+const forgotPasswordRoute = createRoute({
+  getParentRoute: () => authLayoutRoute,
+  path: '/forgot-password',
+  component: ForgotPasswordPage,
+})
+
+const resetPasswordRoute = createRoute({
+  getParentRoute: () => authLayoutRoute,
+  path: '/reset-password',
+  component: ResetPasswordPage,
+})
+
 export const authRoutes = [
   loginRoute,
   registerRoute,
   verifyEmailRoute,
-  ...AUTH_PAGES.map(({ path, title }) =>
-    createRoute({
-      getParentRoute: () => authLayoutRoute,
-      path,
-      component: () => <PlaceholderPage title={title} />,
-    }),
-  ),
+  forgotPasswordRoute,
+  resetPasswordRoute,
   authCompleteRoute,
 ]

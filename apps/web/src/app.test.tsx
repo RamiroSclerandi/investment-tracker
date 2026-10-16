@@ -84,7 +84,7 @@ describe('App', () => {
   it('keeps the other auth routes inside the same layout', async () => {
     await renderApp('/forgot-password')
 
-    expect(await screen.findByRole('heading', { name: 'Forgot password' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Recuperá tu contraseña' })).toBeInTheDocument()
     expect(screen.getByText(BRAND_TAGLINE)).toBeInTheDocument()
   })
 })
