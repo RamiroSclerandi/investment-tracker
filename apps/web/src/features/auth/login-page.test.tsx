@@ -246,6 +246,46 @@ describe('/login', () => {
     await waitFor(() => expect(resends).toHaveLength(2))
   })
 
+  it('keeps the cooldown of a resend that resolves after its alert was unmounted', async () => {
+    answerLogin(() => problem(403, 'EMAIL_NOT_VERIFIED'))
+    let releaseResend!: () => void
+    const resendReleased = new Promise<void>((resolve) => {
+      releaseResend = resolve
+    })
+    server.use(
+      http.post(RESEND_URL, async () => {
+        await resendReleased
+        return HttpResponse.json({ status: 'accepted' }, { status: 202 })
+      }),
+    )
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    try {
+      await renderApp('/login')
+      await screen.findByRole('heading', { name: 'Ingresá a tu cuenta' })
+
+      fillAndSubmit('rami@example.com')
+      fireEvent.click(await screen.findByRole('button', { name: 'Reenviar email de verificación' }))
+
+      fireEvent.click(screen.getByRole('link', { name: '¿La olvidaste?' }))
+      await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument())
+
+      releaseResend()
+      await new Promise((resolve) => setTimeout(resolve, 20))
+
+      fireEvent.click(screen.getByRole('link', { name: 'Ingresá' }))
+      await screen.findByRole('heading', { name: 'Ingresá a tu cuenta' })
+      fillAndSubmit('rami@example.com')
+
+      expect(await screen.findByRole('button', { name: /Reenviar en/ })).toBeDisabled()
+      const actWarnings = consoleError.mock.calls
+        .map((call) => String(call[0]))
+        .filter((message) => message.includes('not wrapped in act'))
+      expect(actWarnings).toEqual([])
+    } finally {
+      consoleError.mockRestore()
+    }
+  })
+
   it('redirects to the dashboard when a session already exists', async () => {
     server.use(
       http.post(REFRESH_URL, () =>

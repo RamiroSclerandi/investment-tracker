@@ -14,6 +14,7 @@ import {
   primaryButtonClass,
 } from '@/features/auth/auth-form-parts'
 import { passwordSchema } from '@/features/auth/auth-schemas'
+import { tokenFromHash } from '@/features/auth/hash-token'
 
 const resetSchema = z.object({ password: passwordSchema })
 
@@ -26,7 +27,7 @@ export function ResetPasswordPage() {
   const navigate = useNavigate()
   const hash = useLocation({ select: (location) => location.hash })
   // Read once: the hash is cleared right away so the token never stays in the address bar or history.
-  const [token] = useState(() => new URLSearchParams(hash).get('token'))
+  const [token] = useState(() => tokenFromHash(hash))
 
   useEffect(() => {
     if (hash) void navigate({ to: '/reset-password', replace: true })

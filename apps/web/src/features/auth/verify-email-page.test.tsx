@@ -1,4 +1,4 @@
-import { act, fireEvent, screen } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor } from '@testing-library/react'
 import { delay, http, HttpResponse } from 'msw'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { renderApp } from '@/test/render-app'
@@ -6,7 +6,7 @@ import { server } from '@/test/server'
 
 const VERIFY_URL = '*/api/v1/auth/verify-email'
 const RESEND_URL = '*/api/v1/auth/resend-verification'
-const TOKEN = 'secret-verify-token'
+const TOKEN = 'aB-_9xY0zQ'
 const HEADING = 'Verificá tu email'
 const INVALID_MESSAGE = 'Enlace inválido o contraseña incorrecta.'
 const GENERIC_ERROR = 'No pudimos verificar tu email. Probá de nuevo en unos minutos.'
@@ -63,10 +63,30 @@ describe('/verify-email', () => {
     const bodies = answerVerify(verified)
     const { router } = await openVerifyLink()
 
-    expect(router.state.location.hash).toBe('')
+    await waitFor(() => expect(router.state.location.hash).toBe(''))
     expect(router.state.location.pathname).toBe('/verify-email')
     expect(document.body).not.toHaveTextContent(TOKEN)
     expect(bodies).toHaveLength(0)
+  })
+
+  it('clears the token hash before the verify request leaves', async () => {
+    const { router } = await openVerifyLink()
+    const bodies: unknown[] = []
+    let hashAtRequest: string | undefined
+    server.use(
+      http.post(VERIFY_URL, async ({ request }) => {
+        hashAtRequest = router.state.location.hash
+        bodies.push(await request.json())
+        return verified()
+      }),
+    )
+    await waitFor(() => expect(router.state.location.hash).toBe(''))
+
+    submitPassword()
+
+    await waitFor(() => expect(bodies).toHaveLength(1))
+    expect(hashAtRequest).toBe('')
+    expect(bodies[0]).toEqual({ token: TOKEN, password: 'correct horse battery' })
   })
 
   it('validates the password length without calling the API', async () => {
@@ -125,6 +145,62 @@ describe('/verify-email', () => {
     expect(screen.getByRole('button', { name: 'Reenviar en 1:00' })).toBeDisabled()
     fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'otra@example.com' } })
     expect(resends).toEqual([{ email: 'rami@example.com' }])
+  })
+
+  it('keeps the resend cooldown when the resend form remounts', async () => {
+    const bodies = answerVerify(
+      () => problem(400, 'INVALID_EMAIL_TOKEN'),
+      () => problem(400, 'INVALID_EMAIL_TOKEN'),
+    )
+    const resends = answerResends()
+    await openVerifyLink()
+    submitPassword('wrong password!')
+    await screen.findByRole('alert')
+
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'rami@example.com' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar nuevo enlace' }))
+    expect(
+      await screen.findByText('Si la cuenta está pendiente de verificación, te enviamos un nuevo enlace.'),
+    ).toBeInTheDocument()
+
+    // A new verify submit unmounts the resend section; the wait must survive the remount.
+    submitPassword('wrong password!')
+    await waitFor(() => expect(bodies).toHaveLength(2))
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'rami@example.com' } })
+
+    expect(screen.getByRole('button', { name: /Reenviar en/ })).toBeDisabled()
+    expect(resends).toEqual([{ email: 'rami@example.com' }])
+  })
+
+  it('does not block a resend to a different address during a cooldown', async () => {
+    answerVerify(() => problem(400, 'INVALID_EMAIL_TOKEN'))
+    const resends = answerResends()
+    await openVerifyLink()
+    submitPassword()
+    await screen.findByRole('alert')
+
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'rami@example.com' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Enviar nuevo enlace' }))
+    expect(
+      await screen.findByText('Si la cuenta está pendiente de verificación, te enviamos un nuevo enlace.'),
+    ).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'otra@example.com' } })
+
+    expect(screen.getByRole('button', { name: 'Enviar nuevo enlace' })).toBeEnabled()
+    expect(resends).toEqual([{ email: 'rami@example.com' }])
+  })
+
+  it('hints that an already verified account can log in when the link is invalid', async () => {
+    answerVerify(() => problem(400, 'INVALID_EMAIL_TOKEN'))
+    await openVerifyLink()
+
+    submitPassword('wrong password!')
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(INVALID_MESSAGE)
+    const loginHint = screen.getByRole('link', { name: 'podés iniciar sesión' })
+    expect(loginHint).toHaveAttribute('href', '/login')
+    expect(loginHint.parentElement).toHaveTextContent('Si ya verificaste tu email, podés iniciar sesión.')
   })
 
   it('offers only a new link when the URL carries no token', async () => {

@@ -1,10 +1,11 @@
-import { fireEvent, screen } from '@testing-library/react'
+import { fireEvent, screen, waitFor } from '@testing-library/react'
 import { delay, http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
 import { server } from '@/test/server'
 import { renderApp } from '@/test/render-app'
 
 const REFRESH_URL = '*/api/v1/auth/refresh'
+const LOGOUT_URL = '*/api/v1/auth/logout'
 const ERROR_HEADING = 'No pudimos completar el ingreso con Google'
 const UNREACHABLE_HEADING = 'No pudimos conectar'
 
@@ -103,6 +104,32 @@ describe('/auth/complete', () => {
     session.signIn('other-tab-token')
 
     expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: ERROR_HEADING })).not.toBeInTheDocument()
+  })
+
+  it('lands on login when a logout resolves while the refresh is still in flight', async () => {
+    let releaseRefresh!: () => void
+    const refreshReleased = new Promise<void>((resolve) => {
+      releaseRefresh = resolve
+    })
+    server.use(
+      http.post(REFRESH_URL, async () => {
+        await refreshReleased
+        return HttpResponse.json({ access_token: 'google-token', expires_in: 900, token_type: 'Bearer' })
+      }),
+      http.post(LOGOUT_URL, () => new HttpResponse(null, { status: 204 })),
+    )
+
+    const { router, session } = await renderApp('/auth/complete')
+    await screen.findByText('Conectando con Google…')
+
+    session.signIn('held-token')
+    await session.logout()
+    releaseRefresh()
+
+    await waitFor(() => expect(router.state.location.pathname).toBe('/login'))
+    expect(screen.getByRole('heading', { name: 'Ingresá a tu cuenta' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Dashboard' })).not.toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: ERROR_HEADING })).not.toBeInTheDocument()
   })
 

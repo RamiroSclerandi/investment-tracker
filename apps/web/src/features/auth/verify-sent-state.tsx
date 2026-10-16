@@ -7,7 +7,7 @@ import { useResendVerification } from '@/features/auth/use-resend-verification'
 const INITIAL_COOLDOWN_SECONDS = 60
 
 export function VerifySentState({ email }: { email: string }) {
-  const resendState = useResendVerification(INITIAL_COOLDOWN_SECONDS)
+  const resendState = useResendVerification(email, INITIAL_COOLDOWN_SECONDS)
 
   return (
     <div className="flex flex-1 flex-col gap-[22px]">
