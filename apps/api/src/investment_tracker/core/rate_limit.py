@@ -66,17 +66,22 @@ class KeyedRateLimiter:
 login_limiter = KeyedRateLimiter("5/minute")
 forgot_email_limiter = KeyedRateLimiter("3/hour")
 
+# Every limit that answers 429 is per minute, so one full window is the longest wait to announce.
+RATE_LIMITED_RETRY_AFTER_SECONDS = 60
+
 
 async def handle_rate_limit_exceeded(request: Request, exc: Exception) -> JSONResponse:
     if not isinstance(exc, RateLimitExceeded | KeyedRateLimitExceededError):
         raise exc
-    return problem_response(
+    response = problem_response(
         request,
         status=429,
         title="Too many requests",
         detail="Too many requests. Try again in a minute.",
         code="RATE_LIMITED",
     )
+    response.headers["Retry-After"] = str(RATE_LIMITED_RETRY_AFTER_SECONDS)
+    return response
 
 
 def register_rate_limiting(app: FastAPI) -> None:

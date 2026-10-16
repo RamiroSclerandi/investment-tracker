@@ -2,6 +2,7 @@ import structlog
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
+from investment_tracker.auth.cookies import OIDC_COOKIE_NAME, OIDC_COOKIE_PATH
 from investment_tracker.core.errors import DomainError, problem_response
 
 logger = structlog.get_logger()
@@ -61,6 +62,9 @@ class PasswordHashingBusyError(DomainError):
         super().__init__("The service is busy. Try again in a few seconds.")
 
 
+SERVICE_BUSY_RETRY_AFTER_SECONDS = 5
+
+
 async def handle_password_hashing_busy(request: Request, exc: Exception) -> JSONResponse:
     if not isinstance(exc, PasswordHashingBusyError):
         raise exc
@@ -68,7 +72,7 @@ async def handle_password_hashing_busy(request: Request, exc: Exception) -> JSON
     response = problem_response(
         request, status=exc.status, title=exc.title, detail=str(exc), code=exc.code
     )
-    response.headers["Retry-After"] = "5"
+    response.headers["Retry-After"] = str(SERVICE_BUSY_RETRY_AFTER_SECONDS)
     return response
 
 
@@ -88,6 +92,11 @@ async def handle_oidc_unavailable(request: Request, exc: Exception) -> JSONRespo
         request, status=exc.status, title=exc.title, detail=str(exc), code=exc.code
     )
     response.headers["Cache-Control"] = "no-store"
+    # Only the Google routes raise this, and their state cookie is single-use, so it must
+    # not survive for a second attempt.
+    response.delete_cookie(
+        OIDC_COOKIE_NAME, path=OIDC_COOKIE_PATH, secure=True, httponly=True, samesite="lax"
+    )
     return response
 
 

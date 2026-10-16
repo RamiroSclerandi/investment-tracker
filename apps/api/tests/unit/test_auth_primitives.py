@@ -1,7 +1,11 @@
 import hashlib
 from datetime import timedelta
 
-from investment_tracker.auth.emails import password_reset_email, verification_email
+from investment_tracker.auth.emails import (
+    google_link_notification_email,
+    password_reset_email,
+    verification_email,
+)
 from investment_tracker.auth.passwords import (
     hash_password,
     hash_password_async,
@@ -70,6 +74,18 @@ def test_password_reset_email_states_the_token_lifetime() -> None:
 
     assert "45 minutos" in message.text
     assert "30 minutos" not in message.text
+
+
+def test_the_google_link_notification_carries_no_links_or_tokens() -> None:
+    message = google_link_notification_email(to="ana@example.com", display_name="Ana")
+
+    assert message.to == "ana@example.com"
+    assert message.subject == "Vinculaste Google a tu cuenta"
+    assert "Ana" in message.text
+    assert "Google" in message.text
+    assert "contraseña" in message.text
+    assert "http" not in message.text
+    assert "#token=" not in message.text
 
 
 def test_verify_password_accepts_the_matching_password() -> None:

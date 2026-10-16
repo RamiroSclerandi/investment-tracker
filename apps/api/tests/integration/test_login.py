@@ -259,6 +259,7 @@ async def test_the_sixth_login_per_ip_and_email_within_a_minute_is_rate_limited(
     assert limited.status_code == 429
     assert limited.json()["code"] == "RATE_LIMITED"
     assert limited.headers["content-type"] == "application/problem+json"
+    assert limited.headers["retry-after"] == "60"
     assert other_email.status_code == 401
     assert other_ip.status_code == 200
 
@@ -275,6 +276,7 @@ async def test_one_ip_is_capped_at_twenty_logins_a_minute_across_emails(
     assert [response.status_code for response in attempts] == [401] * 20
     assert limited.status_code == 429
     assert limited.json()["code"] == "RATE_LIMITED"
+    assert limited.headers["retry-after"] == "60"
     assert other_ip.status_code == 401
 
 

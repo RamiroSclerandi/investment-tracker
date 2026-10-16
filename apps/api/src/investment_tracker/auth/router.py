@@ -6,6 +6,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response, stat
 from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints, model_validator
 
+from investment_tracker.auth.cookies import OIDC_COOKIE_NAME, OIDC_COOKIE_PATH
 from investment_tracker.auth.dependencies import (
     CurrentUserDep,
     SessionServiceDep,
@@ -30,6 +31,7 @@ from investment_tracker.core.rate_limit import (
     client_ip,
     client_ip_key,
     forgot_email_limiter,
+    handle_rate_limit_exceeded,
     limiter,
     login_limiter,
 )
@@ -41,8 +43,6 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 REFRESH_COOKIE_NAME = "it_rt"
 REFRESH_COOKIE_PATH = "/api/v1/auth"
 NO_STORE = {"Cache-Control": "no-store"}
-OIDC_COOKIE_NAME = "it_oidc"
-OIDC_COOKIE_PATH = "/api/v1/auth/google"
 OIDC_COOKIE_MAX_AGE_SECONDS = 600
 
 
@@ -179,6 +179,12 @@ def clear_refresh_cookie(response: Response) -> None:
     )
 
 
+def clear_oidc_cookie(response: Response) -> None:
+    response.delete_cookie(
+        OIDC_COOKIE_NAME, path=OIDC_COOKIE_PATH, secure=True, httponly=True, samesite="lax"
+    )
+
+
 def client_details(request: Request) -> tuple[str | None, str | None]:
     address = client_ip(request)
     return request.headers.get("user-agent"), str(address) if address is not None else None
@@ -232,6 +238,20 @@ def schedule_delivery(
         background_tasks.add_task(deliver_email, request.app.state.email_sender, message)
 
 
+# The cookie path constant is the mounted prefix of both Google routes.
+OIDC_ROUTE_PATHS = (f"{OIDC_COOKIE_PATH}/start", f"{OIDC_COOKIE_PATH}/callback")
+
+
+async def handle_rate_limit_exceeded_clearing_oidc_cookie(
+    request: Request, exc: Exception
+) -> JSONResponse:
+    response = await handle_rate_limit_exceeded(request, exc)
+    # The Google state cookie is single-use, so a 429 must not leave it behind for a retry.
+    if request.url.path in OIDC_ROUTE_PATHS:
+        clear_oidc_cookie(response)
+    return response
+
+
 @router.post("/register", status_code=status.HTTP_202_ACCEPTED)
 @limiter.limit("3/minute")
 async def register(
@@ -276,6 +296,7 @@ async def forgot_password(
     background_tasks: BackgroundTasks,
 ) -> AcceptedResponse:
     if not forgot_email_limiter.allow(f"forgot:{body.email.lower()}"):
+        # Dropped silently: a 429 or a delay here would reveal which addresses hit the cap.
         return AcceptedResponse()
     message = await service.request_password_reset(body.email)
     schedule_delivery(request, background_tasks, message)
@@ -334,9 +355,7 @@ async def logout_all(user: CurrentUserDep, service: SessionServiceDep) -> Respon
 
 def oidc_redirect(location: str) -> RedirectResponse:
     response = RedirectResponse(location, status_code=status.HTTP_302_FOUND, headers=NO_STORE)
-    response.delete_cookie(
-        OIDC_COOKIE_NAME, path=OIDC_COOKIE_PATH, secure=True, httponly=True, samesite="lax"
-    )
+    clear_oidc_cookie(response)
     return response
 
 
@@ -365,6 +384,7 @@ async def google_start(request: Request, google: GoogleDep) -> RedirectResponse:
 async def google_callback(
     request: Request,
     service: GoogleSignInServiceDep,
+    background_tasks: BackgroundTasks,
     code: str | None = None,
     state: str | None = None,
     error: str | None = None,
@@ -372,7 +392,7 @@ async def google_callback(
     complete_url = f"{request.app.state.settings.web_base_url}/auth/complete"
     user_agent, ip = client_details(request)
     try:
-        refresh_token = await service.complete(
+        refresh_token, notification = await service.complete(
             cookie=request.cookies.get(OIDC_COOKIE_NAME),
             state=state,
             code=code,
@@ -385,6 +405,7 @@ async def google_callback(
         return oidc_redirect(f"{complete_url}#error=oauth_failed")
     response = oidc_redirect(complete_url)
     set_refresh_cookie(response, refresh_token)
+    schedule_delivery(request, background_tasks, notification)
     return response
 
 

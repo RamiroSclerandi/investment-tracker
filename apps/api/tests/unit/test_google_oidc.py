@@ -1,7 +1,7 @@
 import uuid
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Any, cast
 from urllib.parse import parse_qsl, urlsplit
 
 import httpx
@@ -9,16 +9,21 @@ import pytest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from fastapi import FastAPI
 from pydantic import SecretStr
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from investment_tracker.auth.errors import InvalidAccessTokenError
 from investment_tracker.auth.google import (
+    GoogleIdentity,
     GoogleOidcClient,
     GoogleSignInError,
     OidcStateCodec,
     PendingSignIn,
 )
 from investment_tracker.auth.jwt import AccessTokens
-from investment_tracker.auth.service import sanitize_display_name
+from investment_tracker.auth.service import GoogleSignInService, sanitize_display_name
+from investment_tracker.core.db import get_session
+from investment_tracker.core.email import EmailMessage
 from investment_tracker.core.rate_limit import limiter
 from investment_tracker.core.settings import Settings
 from investment_tracker.main import create_app
@@ -141,6 +146,9 @@ async def test_google_endpoints_answer_503_when_google_is_not_configured(
     assert response.headers["content-type"] == "application/problem+json"
     assert response.headers["cache-control"] == "no-store"
     assert response.json()["code"] == "OIDC_UNAVAILABLE"
+    name, _, attributes = cookie_attributes(response.headers["set-cookie"])
+    assert name == "it_oidc"
+    assert {"max-age=0", "path=/api/v1/auth/google"} <= attributes
 
 
 async def test_start_allows_ten_requests_per_minute_per_client_ip(
@@ -154,7 +162,34 @@ async def test_start_allows_ten_requests_per_minute_per_client_ip(
 
     assert limited.status_code == httpx.codes.TOO_MANY_REQUESTS
     assert limited.json()["code"] == "RATE_LIMITED"
+    assert limited.headers["retry-after"] == "60"
+    name, _, attributes = cookie_attributes(limited.headers["set-cookie"])
+    assert name == "it_oidc"
+    assert {"max-age=0", "path=/api/v1/auth/google"} <= attributes
     assert other_client.status_code == httpx.codes.FOUND
+
+
+async def test_the_callback_answers_429_clearing_the_oidc_cookie(
+    app: FastAPI, client: httpx.AsyncClient
+) -> None:
+    # The unit app never starts the lifespan, so the session dependency has no sessionmaker;
+    # the callback only needs it to exist, never to run a statement.
+    async def override_get_session() -> AsyncIterator[AsyncSession]:
+        yield cast(AsyncSession, None)
+
+    app.dependency_overrides[get_session] = override_get_session
+    for _ in range(10):
+        assert (await client.get(CALLBACK_URL, headers=CLIENT_IP)).status_code == (
+            httpx.codes.FOUND
+        )
+
+    limited = await client.get(CALLBACK_URL, headers=CLIENT_IP)
+
+    assert limited.status_code == httpx.codes.TOO_MANY_REQUESTS
+    assert limited.headers["retry-after"] == "60"
+    name, _, attributes = cookie_attributes(limited.headers["set-cookie"])
+    assert name == "it_oidc"
+    assert {"max-age=0", "path=/api/v1/auth/google"} <= attributes
 
 
 async def test_exchange_sends_the_verifier_and_secret_and_returns_the_identity(
@@ -334,6 +369,65 @@ def test_a_state_cookie_is_not_accepted_as_an_access_token() -> None:
 
     with pytest.raises(InvalidAccessTokenError):
         access_tokens.decode(cookie)
+
+
+async def _completed_sign_in(
+    fake_google: FakeGoogle, monkeypatch: pytest.MonkeyPatch, start_session: object
+) -> tuple[str, EmailMessage | None]:
+    fake_google.nonce = "n"
+    codec = state_codec()
+    cookie = codec.encode(PendingSignIn(state="s", nonce="n", code_verifier="v"))
+    monkeypatch.setattr(GoogleSignInService, "_start_session", start_session)
+    service = GoogleSignInService(cast(AsyncSession, None), fake_google.client(), codec)
+    return await service.complete(
+        cookie=cookie, state="s", code="c", error=None, user_agent=None, ip=None
+    )
+
+
+async def test_a_link_race_lost_once_retries_the_session_start_and_succeeds(
+    fake_google: FakeGoogle, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    attempts = 0
+
+    async def start_session(
+        service: GoogleSignInService,
+        identity: GoogleIdentity,
+        user_agent: str | None,
+        ip: str | None,
+    ) -> tuple[str, EmailMessage | None]:
+        nonlocal attempts
+        attempts += 1
+        if attempts == 1:
+            raise IntegrityError("INSERT INTO app.oauth_accounts", None, RuntimeError("dup"))
+        return "refresh-token", None
+
+    refresh_token, notification = await _completed_sign_in(fake_google, monkeypatch, start_session)
+
+    assert attempts == 2
+    assert refresh_token == "refresh-token"
+    assert notification is None
+
+
+async def test_a_link_race_lost_twice_fails_with_a_concurrent_link_conflict(
+    fake_google: FakeGoogle, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    attempts = 0
+
+    async def start_session(
+        service: GoogleSignInService,
+        identity: GoogleIdentity,
+        user_agent: str | None,
+        ip: str | None,
+    ) -> tuple[str, EmailMessage | None]:
+        nonlocal attempts
+        attempts += 1
+        raise IntegrityError("INSERT INTO app.oauth_accounts", None, RuntimeError("dup"))
+
+    with pytest.raises(GoogleSignInError) as raised:
+        await _completed_sign_in(fake_google, monkeypatch, start_session)
+
+    assert raised.value.reason == "concurrent_link_conflict"
+    assert attempts == 2
 
 
 @pytest.mark.parametrize(

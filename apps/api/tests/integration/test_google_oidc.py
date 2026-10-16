@@ -178,10 +178,14 @@ def _assert_failed(response: httpx.Response) -> None:
 
 
 async def test_a_new_google_user_is_created_verified_and_signed_in(
-    client: httpx.AsyncClient, engine: AsyncEngine, fake_google: FakeGoogle
+    client: httpx.AsyncClient,
+    engine: AsyncEngine,
+    fake_google: FakeGoogle,
+    emails: RecordingEmailSender,
 ) -> None:
     response = await _sign_in(client, fake_google)
 
+    assert emails.sent == []
     refresh_token = _assert_succeeded(response)
     [user] = await _users(engine)
     assert user["email"] == EMAIL
@@ -218,7 +222,10 @@ async def test_a_new_user_without_a_usable_google_name_is_named_after_the_email(
 
 
 async def test_an_existing_google_account_signs_in_its_user(
-    client: httpx.AsyncClient, engine: AsyncEngine, fake_google: FakeGoogle
+    client: httpx.AsyncClient,
+    engine: AsyncEngine,
+    fake_google: FakeGoogle,
+    emails: RecordingEmailSender,
 ) -> None:
     user_id = await _create_user(engine)
     await _link(engine, user_id, "google-subject-1")
@@ -226,6 +233,7 @@ async def test_an_existing_google_account_signs_in_its_user(
 
     _assert_succeeded(await _sign_in(client, fake_google))
 
+    assert emails.sent == []
     [user] = await _users(engine)
     assert user["id"] == user_id
     assert user["display_name"] == "Local Ana"
@@ -234,7 +242,10 @@ async def test_an_existing_google_account_signs_in_its_user(
 
 
 async def test_a_verified_local_user_is_linked_without_changing_password_or_name(
-    client: httpx.AsyncClient, engine: AsyncEngine, fake_google: FakeGoogle
+    client: httpx.AsyncClient,
+    engine: AsyncEngine,
+    fake_google: FakeGoogle,
+    emails: RecordingEmailSender,
 ) -> None:
     user_id = await _create_user(engine)
 
@@ -245,6 +256,11 @@ async def test_a_verified_local_user_is_linked_without_changing_password_or_name
     assert user["password_hash"] == PASSWORD_HASH
     assert user["display_name"] == "Local Ana"
     assert [account["user_id"] for account in await _oauth_accounts(engine)] == [user_id]
+    # Linking a verified account happened without any password proof, so the mailbox learns.
+    [notification] = emails.sent
+    assert notification.to == EMAIL
+    assert notification.subject == "Vinculaste Google a tu cuenta"
+    assert "#token=" not in notification.text
 
 
 async def test_password_login_still_works_for_a_linked_verified_user(
@@ -262,7 +278,10 @@ async def test_password_login_still_works_for_a_linked_verified_user(
 
 
 async def test_an_unverified_local_user_is_claimed_by_the_google_mailbox_owner(
-    client: httpx.AsyncClient, engine: AsyncEngine, fake_google: FakeGoogle
+    client: httpx.AsyncClient,
+    engine: AsyncEngine,
+    fake_google: FakeGoogle,
+    emails: RecordingEmailSender,
 ) -> None:
     user_id = await _create_user(engine, is_verified=False)
     now = datetime.now(UTC)
@@ -290,6 +309,7 @@ async def test_an_unverified_local_user_is_claimed_by_the_google_mailbox_owner(
 
     refresh_token = _assert_succeeded(await _sign_in(client, fake_google))
 
+    assert emails.sent == []
     [user] = await _users(engine)
     assert user["id"] == user_id
     assert user["password_hash"] is None
@@ -441,3 +461,5 @@ async def test_the_callback_allows_ten_requests_per_minute_per_client_ip(
     limited = await client.get(CALLBACK_URL, headers=CLIENT_IP)
 
     assert limited.status_code == httpx.codes.TOO_MANY_REQUESTS
+    cookies = _set_cookies(limited)
+    assert cookies["it_oidc"][1] >= {"max-age=0", "path=/api/v1/auth/google"}

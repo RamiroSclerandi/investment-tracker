@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import json
 import secrets
@@ -145,6 +146,75 @@ async def test_a_401_on_send_refreshes_once_and_retries_once() -> None:
 
     assert len(google.token_requests) == 2
     assert [bearer(r) for r in google.send_requests] == google.issued_tokens
+
+
+class YieldingTransport(httpx.AsyncBaseTransport):
+    # The mock handler runs inline; a real network call yields to the event loop, which is
+    # what lets two concurrent sends race on the same cached token.
+    def __init__(self, handler: Handler) -> None:
+        self._handler = handler
+
+    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+        await asyncio.sleep(0)
+        return self._handler(request)
+
+
+def build_sender_with(
+    transport: httpx.AsyncBaseTransport,
+) -> GmailApiEmailSender:
+    return GmailApiEmailSender(
+        *credentials(),
+        sender="owner@gmail.com",
+        display_name="Investment Tracker",
+        transport=transport,
+        clock=FakeClock(),
+    )
+
+
+async def test_two_concurrent_sends_that_both_hit_a_401_refresh_the_token_once() -> None:
+    google = FakeGoogle(send_statuses=[401, 401, 200, 200])
+    sender = build_sender_with(YieldingTransport(google.handler))
+
+    await asyncio.gather(sender.send(MESSAGE), sender.send(MESSAGE))
+
+    assert len(google.token_requests) == 2
+    assert [bearer(r) for r in google.send_requests] == [google.issued_tokens[0]] * 2 + [
+        google.issued_tokens[1]
+    ] * 2
+
+
+async def test_a_transport_error_while_sending_fails_the_delivery() -> None:
+    def unreachable_send(request: httpx.Request) -> httpx.Response:
+        if str(request.url) == SEND_URL:
+            raise httpx.ConnectError("connection refused", request=request)
+        return httpx.Response(200, json={"access_token": "cached", "expires_in": 3600})
+
+    sender = build_sender_with(httpx.MockTransport(unreachable_send))
+
+    with pytest.raises(EmailDeliveryError) as excinfo:
+        await sender.send(MESSAGE)
+
+    assert str(excinfo.value) == "gmail_send_failed: ConnectError"
+
+
+async def test_a_non_ascii_display_name_is_rfc2047_encoded_in_the_from_header() -> None:
+    google = FakeGoogle()
+    sender = GmailApiEmailSender(
+        *credentials(),
+        sender="owner@gmail.com",
+        display_name="Inversión Tracker Ñandú",
+        transport=httpx.MockTransport(google.handler),
+        clock=FakeClock(),
+    )
+
+    await sender.send(MESSAGE)
+
+    raw_bytes = base64.urlsafe_b64decode(json.loads(google.send_requests[0].content)["raw"])
+    from_line = next(line for line in raw_bytes.splitlines() if line.startswith(b"From:"))
+    assert b"=?utf-8?" in from_line
+    assert "Inversión Tracker Ñandú".encode() not in from_line
+    parsed = message_from_bytes(raw_bytes, policy=policy.default)
+    assert parsed["From"] == "Inversión Tracker Ñandú <owner@gmail.com>"
 
 
 async def test_a_second_401_after_the_retry_fails_the_delivery() -> None:
