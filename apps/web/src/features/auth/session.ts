@@ -4,6 +4,7 @@ import type { paths } from '@/api/generated/schema'
 export type AuthStatus = 'loading' | 'authenticated' | 'anonymous'
 
 const CSRF_HEADER = { 'x-requested-with': 'investment-tracker' }
+const REFRESH_LOCK = 'it-refresh'
 
 // Separate client without the auth middleware, so a failing refresh can never trigger another refresh.
 const sessionClient = createClient<paths>({ baseUrl: window.location.origin })
@@ -34,12 +35,20 @@ function setAccessToken(token: string | null) {
   listeners.forEach((listener) => listener())
 }
 
+// Tabs refreshing at once would present the same it_rt; the API treats the second as reuse and revokes the family.
+function withRefreshLock<T>(task: () => Promise<T>): Promise<T> {
+  if (!('locks' in navigator)) return task()
+  return navigator.locks.request(REFRESH_LOCK, task)
+}
+
 async function requestAccessToken(): Promise<boolean> {
   try {
-    const { data } = await sessionClient.POST('/api/v1/auth/refresh', {
-      params: { header: CSRF_HEADER },
-      credentials: 'same-origin',
-    })
+    const { data } = await withRefreshLock(() =>
+      sessionClient.POST('/api/v1/auth/refresh', {
+        params: { header: CSRF_HEADER },
+        credentials: 'same-origin',
+      }),
+    )
     setAccessToken(data?.access_token ?? null)
   } catch (error) {
     if (!(error instanceof TypeError)) throw error

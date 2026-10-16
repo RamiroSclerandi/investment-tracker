@@ -1,6 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { delay, http, HttpResponse } from 'msw'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { server } from '@/test/server'
 
 const REFRESH_URL = '*/api/v1/auth/refresh'
@@ -92,6 +92,57 @@ describe('silent refresh on boot', () => {
     await expect(modules.session.refreshSession()).resolves.toBe(false)
 
     expect(modules.session.getAuthStatus()).toBe('anonymous')
+  })
+})
+
+function installFakeLocks() {
+  const names: string[] = []
+  let tail: Promise<unknown> = Promise.resolve()
+  const locks = {
+    request: (name: string, callback: () => Promise<unknown>) => {
+      names.push(name)
+      const run = tail.then(() => callback())
+      tail = run.catch(() => undefined)
+      return run
+    },
+  }
+  Object.defineProperty(navigator, 'locks', { value: locks, configurable: true })
+  return names
+}
+
+describe('refresh across tabs', () => {
+  afterEach(() => {
+    Reflect.deleteProperty(navigator, 'locks')
+  })
+
+  it('never has two refresh requests in flight when two tabs refresh at once', async () => {
+    const lockNames = installFakeLocks()
+    let inFlight = 0
+    let maxInFlight = 0
+    let issued = 0
+    server.use(
+      http.post(REFRESH_URL, async () => {
+        inFlight += 1
+        maxInFlight = Math.max(maxInFlight, inFlight)
+        await delay(20)
+        inFlight -= 1
+        issued += 1
+        return tokenResponse(`token-${issued}`)
+      }),
+    )
+    const firstTab = modules.session
+    vi.resetModules()
+    const secondTab = await import('@/features/auth/session')
+
+    const outcomes = await Promise.all([firstTab.refreshSession(), secondTab.refreshSession()])
+
+    expect(outcomes).toEqual([true, true])
+    expect(issued).toBe(2)
+    expect(maxInFlight).toBe(1)
+    expect(lockNames).toEqual(['it-refresh', 'it-refresh'])
+    expect(new Set([firstTab.getAccessToken(), secondTab.getAccessToken()])).toEqual(
+      new Set(['token-1', 'token-2']),
+    )
   })
 })
 
