@@ -14,6 +14,7 @@ import {
   primaryButtonClass,
 } from '@/features/auth/auth-form-parts'
 import { passwordSchema } from '@/features/auth/auth-schemas'
+import { tokenFromHash } from '@/features/auth/hash-token'
 import { ResendVerificationForm } from '@/features/auth/resend-verification-form'
 
 const verifySchema = z.object({ password: passwordSchema })
@@ -31,7 +32,7 @@ export function VerifyEmailPage() {
   const navigate = useNavigate()
   const hash = useLocation({ select: (location) => location.hash })
   // Read once: the hash is cleared right away so the token never stays in the address bar or history.
-  const [token] = useState(() => new URLSearchParams(hash).get('token'))
+  const [token] = useState(() => tokenFromHash(hash))
 
   useEffect(() => {
     if (hash) void navigate({ to: '/verify-email', replace: true })
@@ -103,6 +104,9 @@ function VerifyForm({ token }: { token: string }) {
         <section className="flex flex-col gap-3 border-t border-border pt-5">
           <p className="text-sm text-muted-foreground">¿El enlace venció o ya se usó? Pedí uno nuevo.</p>
           <ResendVerificationForm />
+          <p className="text-sm text-muted-foreground">
+            Si ya verificaste tu email, <Link to="/login" className={linkClass}>podés iniciar sesión</Link>.
+          </p>
         </section>
       )}
     </div>

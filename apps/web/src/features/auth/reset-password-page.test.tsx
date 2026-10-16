@@ -1,11 +1,11 @@
-import { act, fireEvent, screen } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor } from '@testing-library/react'
 import { delay, http, HttpResponse } from 'msw'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { renderApp } from '@/test/render-app'
 import { server } from '@/test/server'
 
 const RESET_URL = '*/api/v1/auth/password/reset'
-const TOKEN = 'secret-reset-token'
+const TOKEN = 'aB-_9xY0zQ'
 const HEADING = 'Creá tu nueva contraseña'
 const GENERIC_ERROR = 'No pudimos guardar la contraseña. Probá de nuevo en unos minutos.'
 
@@ -50,10 +50,30 @@ describe('/reset-password', () => {
     const bodies = answerReset(saved)
     const { router } = await openResetLink()
 
-    expect(router.state.location.hash).toBe('')
+    await waitFor(() => expect(router.state.location.hash).toBe(''))
     expect(router.state.location.pathname).toBe('/reset-password')
     expect(document.body).not.toHaveTextContent(TOKEN)
     expect(bodies).toHaveLength(0)
+  })
+
+  it('clears the token hash before the reset request leaves', async () => {
+    const { router } = await openResetLink()
+    const bodies: unknown[] = []
+    let hashAtRequest: string | undefined
+    server.use(
+      http.post(RESET_URL, async ({ request }) => {
+        hashAtRequest = router.state.location.hash
+        bodies.push(await request.json())
+        return saved()
+      }),
+    )
+    await waitFor(() => expect(router.state.location.hash).toBe(''))
+
+    submitPassword()
+
+    await waitFor(() => expect(bodies).toHaveLength(1))
+    expect(hashAtRequest).toBe('')
+    expect(bodies[0]).toEqual({ token: TOKEN, password: 'correct horse battery' })
   })
 
   it('validates the password length without calling the API', async () => {
