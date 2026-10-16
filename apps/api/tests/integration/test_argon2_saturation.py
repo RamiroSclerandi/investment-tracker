@@ -6,6 +6,8 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 from investment_tracker.auth import passwords
+from investment_tracker.auth.models import User
+from investment_tracker.auth.repository import UserRepository
 from tests.integration.test_login import CLIENT_IP, PASSWORD
 from tests.integration.test_registration import _register_body
 
@@ -42,8 +44,15 @@ async def test_login_answers_503_when_argon2_is_saturated(client: httpx.AsyncCli
 
 @pytest.mark.usefixtures("saturated_argon2")
 async def test_register_answers_503_when_argon2_is_saturated(
-    client: httpx.AsyncClient, engine: AsyncEngine
+    client: httpx.AsyncClient, engine: AsyncEngine, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    attempted_users: list[User] = []
+
+    async def record_add(repository: UserRepository, user: User) -> None:
+        attempted_users.append(user)
+
+    monkeypatch.setattr(UserRepository, "add", record_add)
+
     response = await client.post(
         REGISTER_URL,
         json=_register_body(),
@@ -51,6 +60,9 @@ async def test_register_answers_503_when_argon2_is_saturated(
     )
 
     _assert_service_busy(response)
+    # The plain count cannot distinguish a rolled-back insert from none at all, so the
+    # assertion that fails first is that the repository never tried to create the user.
+    assert attempted_users == []
     async with engine.connect() as connection:
         user_count: int = await connection.scalar(
             text("SELECT count(*) FROM app.users WHERE email = :email"), {"email": EMAIL}
