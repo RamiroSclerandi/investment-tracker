@@ -159,6 +159,31 @@ function installFakeLocks() {
   return names
 }
 
+describe('signing in with a password', () => {
+  it('adopts the token and marks the session authenticated', () => {
+    modules.session.signIn('login-token')
+
+    expect(modules.session.getAccessToken()).toBe('login-token')
+    expect(modules.session.getAuthStatus()).toBe('authenticated')
+  })
+
+  it('keeps the sign-in when a refresh that started earlier is rejected afterwards', async () => {
+    server.use(
+      http.post(REFRESH_URL, async () => {
+        await delay(30)
+        return new HttpResponse(null, { status: 401 })
+      }),
+    )
+    const refresh = modules.session.refreshSession()
+
+    modules.session.signIn('login-token')
+
+    await expect(refresh).resolves.toBe(false)
+    expect(modules.session.getAccessToken()).toBe('login-token')
+    expect(modules.session.getAuthStatus()).toBe('authenticated')
+  })
+})
+
 describe('malformed or hung refreshes', () => {
   afterEach(() => {
     vi.useRealTimers()

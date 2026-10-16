@@ -14,7 +14,7 @@ const sessionClient = createClient<paths>({ baseUrl: window.location.origin })
 let accessToken: string | null = null
 let status: AuthStatus = 'loading'
 let pendingRefresh: Promise<RefreshOutcome> | null = null
-// Bumped by logout so a refresh that was already in flight cannot sign the user back in.
+// Bumped by sign-in and logout so a refresh already in flight cannot overwrite the session that followed it.
 let sessionGeneration = 0
 const listeners = new Set<() => void>()
 
@@ -95,6 +95,11 @@ export function refreshSessionOutcome(): Promise<RefreshOutcome> {
 
 export async function refreshSession(): Promise<boolean> {
   return (await refreshSessionOutcome()) === 'refreshed'
+}
+
+export function signIn(token: string): void {
+  sessionGeneration += 1
+  setAccessToken(token)
 }
 
 export async function logout(): Promise<void> {

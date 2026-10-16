@@ -1,6 +1,9 @@
 import { createMemoryHistory } from '@tanstack/react-router'
 import { render } from '@testing-library/react'
-import { vi } from 'vitest'
+import { beforeAll, vi } from 'vitest'
+
+// The first import transforms the whole app, which can outlast a test's default timeout on a cold run.
+beforeAll(() => import('@/app'), 30_000)
 
 // Fresh modules per render: the router, the session store and the API client never leak between tests.
 export async function renderApp(path: string) {

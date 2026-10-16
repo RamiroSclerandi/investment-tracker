@@ -1,34 +1,51 @@
-import { act, render, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
+import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
-import { App } from '@/app'
-import { router } from '@/router'
+import { renderApp } from '@/test/render-app'
+import { server } from '@/test/server'
 
-async function renderAt(path: string) {
-  render(<App />)
-  await act(() => router.navigate({ to: path }))
+const BRAND_TAGLINE = 'Tu cartera de cripto y mercado argentino, en vivo.'
+
+async function renderSignedIn(path: string) {
+  server.use(
+    http.post('*/api/v1/auth/refresh', () =>
+      HttpResponse.json({ access_token: 'token', expires_in: 900, token_type: 'Bearer' }),
+    ),
+  )
+  const rendered = await renderApp(path)
+  await rendered.session.refreshSession()
+  return rendered
 }
 
 describe('App', () => {
   it('renders the dashboard heading inside the shell on the index route', async () => {
-    await renderAt('/')
+    await renderSignedIn('/')
 
     expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument()
     expect(screen.getByRole('navigation', { name: 'Primary' })).toBeInTheDocument()
   })
 
   it('renders the transactions heading inside the shell', async () => {
-    await renderAt('/transactions')
+    await renderSignedIn('/transactions')
 
     expect(await screen.findByRole('heading', { name: 'Transactions' })).toBeInTheDocument()
     expect(screen.getByRole('banner')).toHaveTextContent('Investment Tracker')
     expect(screen.getByRole('navigation', { name: 'Primary' })).toBeInTheDocument()
   })
 
-  it('renders /login without the app navigation', async () => {
-    await renderAt('/login')
+  it('renders /login in the brand split layout without the app navigation', async () => {
+    await renderApp('/login')
 
-    expect(await screen.findByRole('heading', { name: 'Log in' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Ingresá a tu cuenta' })).toBeInTheDocument()
+    expect(screen.getByText(BRAND_TAGLINE)).toBeInTheDocument()
     expect(screen.queryByRole('navigation')).not.toBeInTheDocument()
     expect(screen.queryByRole('banner')).not.toBeInTheDocument()
+  })
+
+  it('keeps the other auth routes inside the same layout', async () => {
+    await renderApp('/forgot-password')
+
+    expect(await screen.findByRole('heading', { name: 'Forgot password' })).toBeInTheDocument()
+    expect(screen.getByText(BRAND_TAGLINE)).toBeInTheDocument()
   })
 })
