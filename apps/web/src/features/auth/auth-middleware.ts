@@ -6,6 +6,7 @@ const retryableRequests = new WeakMap<Request, Request>()
 
 export const authMiddleware: Middleware = {
   onRequest({ request }) {
+    if (new URL(request.url).origin !== window.location.origin) return undefined
     const token = getAccessToken()
     if (token === null) return undefined
     request.headers.set('Authorization', `Bearer ${token}`)

@@ -265,6 +265,19 @@ describe('authenticated API requests', () => {
     expect(authorizations).toEqual(['Bearer token-a'])
   })
 
+  it('send no authorization header to another origin', async () => {
+    issueTokens('token-a')
+    await modules.session.refreshSession()
+    const authorizations = profileAcceptingOnly('token-a')
+
+    const { response } = await modules.apiClient.GET('/api/v1/auth/me', {
+      baseUrl: 'https://elsewhere.example',
+    })
+
+    expect(response.status).toBe(401)
+    expect(authorizations).toEqual([null])
+  })
+
   it('send no authorization header while signed out', async () => {
     const authorizations = profileAcceptingOnly('token-a')
 
