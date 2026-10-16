@@ -194,6 +194,16 @@ describe('signing in with a password', () => {
     expect(modules.session.getAccessToken()).toBe('login-token')
     expect(modules.session.getAuthStatus()).toBe('authenticated')
   })
+
+  it('reports a refresh overtaken by a sign-in as superseded, not rejected', async () => {
+    issueTokens('late-token')
+    const refresh = modules.session.refreshSessionOutcome()
+
+    modules.session.signIn('login-token')
+
+    await expect(refresh).resolves.toBe('superseded')
+    expect(modules.session.getAccessToken()).toBe('login-token')
+  })
 })
 
 describe('malformed or hung refreshes', () => {

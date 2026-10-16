@@ -95,6 +95,17 @@ describe('/auth/complete', () => {
     expect(refreshes).toHaveLength(2)
   })
 
+  it('lands on the dashboard when a sign-in overtakes its refresh', async () => {
+    answerRefreshes(401)
+
+    const { session } = await renderApp('/auth/complete')
+    await screen.findByText('Conectando con Google…')
+    session.signIn('other-tab-token')
+
+    expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: ERROR_HEADING })).not.toBeInTheDocument()
+  })
+
   it('shows the retry state when the refresh answers with a non-JSON body', async () => {
     server.use(http.post(REFRESH_URL, () => new HttpResponse('<html />', { status: 200 })))
 

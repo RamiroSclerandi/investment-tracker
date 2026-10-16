@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-import { refreshSessionOutcome } from '@/features/auth/session'
+import { getAuthStatus, refreshSessionOutcome } from '@/features/auth/session'
 
 const GOOGLE_START_URL = '/api/v1/auth/google/start'
 
@@ -22,8 +22,10 @@ export function AuthCompletePage() {
     let isCurrent = true
     void refreshSessionOutcome().then((outcome) => {
       if (!isCurrent) return
-      if (outcome === 'refreshed') void navigate({ to: '/', replace: true })
-      else setPhase(outcome === 'rejected' ? 'failed' : 'unreachable')
+      const isSignedIn =
+        outcome === 'refreshed' || (outcome === 'superseded' && getAuthStatus() === 'authenticated')
+      if (isSignedIn) void navigate({ to: '/', replace: true })
+      else setPhase(outcome === 'unavailable' ? 'unreachable' : 'failed')
     })
     return () => {
       isCurrent = false

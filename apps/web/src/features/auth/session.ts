@@ -74,12 +74,12 @@ async function fetchAccessToken(): Promise<string | null | undefined> {
   }
 }
 
-export type RefreshOutcome = 'refreshed' | 'rejected' | 'unavailable'
+export type RefreshOutcome = 'refreshed' | 'rejected' | 'unavailable' | 'superseded'
 
 async function requestAccessToken(): Promise<RefreshOutcome> {
   const startedAt = sessionGeneration
   const token = await fetchAccessToken()
-  if (startedAt !== sessionGeneration) return 'rejected'
+  if (startedAt !== sessionGeneration) return 'superseded'
   if (token !== undefined) setAccessToken(token)
   // Without a held token a transient failure proves nothing either way, so the user is not sent to log in.
   else if (status === 'loading') setStatus('unavailable')
