@@ -13,7 +13,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "api:generate": "uv run --project ../api python -m investment_tracker.cli export-openapi --output src/api/openapi.json && openapi-typescript src/api/openapi.json -o src/api/generated/schema.ts",
+    "api:generate": "node scripts/generate-api.mjs",
     "api:check": "node scripts/check-api.mjs"
   },
   "dependencies": {
