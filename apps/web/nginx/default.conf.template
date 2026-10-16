@@ -6,8 +6,13 @@ server {
     # add_header in a location drops the server-level ones, so each location re-includes them.
     include /etc/nginx/snippets/security-headers.conf;
 
+    # A variable upstream is re-resolved through the container DNS, so a recreated api
+    # container with a new IP keeps working without restarting nginx.
+    resolver ${NGINX_LOCAL_RESOLVERS} valid=10s;
+
     location /api/ {
-        proxy_pass ${API_UPSTREAM};
+        set $api_upstream ${API_UPSTREAM};
+        proxy_pass $api_upstream;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;

@@ -1,7 +1,7 @@
-import { execFileSync } from 'node:child_process'
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { generateApiClient } from './generate-api.mjs'
 
 const committed = {
   'src/api/openapi.json': 'openapi.json',
@@ -14,16 +14,7 @@ const scratch = mkdtempSync(join(tmpdir(), 'api-check-'))
 try {
   const schemaPath = join(scratch, 'openapi.json')
   const typesPath = join(scratch, 'schema.ts')
-  execFileSync(
-    'uv',
-    ['run', '--project', '../api', 'python', '-m', 'investment_tracker.cli', 'export-openapi', '--output', schemaPath],
-    { stdio: 'inherit' },
-  )
-  execFileSync(
-    process.execPath,
-    ['node_modules/openapi-typescript/bin/cli.js', schemaPath, '-o', typesPath],
-    { stdio: 'inherit' },
-  )
+  generateApiClient(schemaPath, typesPath)
 
   const fresh = { 'openapi.json': schemaPath, 'schema.ts': typesPath }
   const stale = Object.entries(committed).filter(

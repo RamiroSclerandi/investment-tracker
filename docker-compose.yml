@@ -27,7 +27,7 @@ services:
       SMTP_URL: smtp://mailpit:1025
       WEB_BASE_URL: http://localhost:8080
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
