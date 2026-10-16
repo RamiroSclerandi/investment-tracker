@@ -1,12 +1,13 @@
 import createClient from 'openapi-fetch'
 import type { paths } from '@/api/generated/schema'
+import { REQUEST_TIMEOUT_MS, withTimeout } from '@/features/auth/request-timeout'
 
 export type AuthStatus = 'loading' | 'authenticated' | 'anonymous' | 'unavailable'
 
 const CSRF_HEADER = { 'x-requested-with': 'investment-tracker' }
 const REFRESH_LOCK = 'it-refresh'
 // Bounds a hung refresh so it cannot hold the cross-tab lock, or block waiting requests, forever.
-export const REFRESH_TIMEOUT_MS = 10_000
+export const REFRESH_TIMEOUT_MS = REQUEST_TIMEOUT_MS
 
 // Separate client without the auth middleware, so a failing refresh can never trigger another refresh.
 const sessionClient = createClient<paths>({ baseUrl: window.location.origin })
@@ -49,18 +50,16 @@ function withRefreshLock<T>(task: () => Promise<T>): Promise<T> {
 }
 
 // Resolves the new token, null when the API rejects the session, or undefined on a transient failure.
-async function postRefresh() {
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), REFRESH_TIMEOUT_MS)
-  try {
-    return await sessionClient.POST('/api/v1/auth/refresh', {
-      params: { header: CSRF_HEADER },
-      credentials: 'same-origin',
-      signal: controller.signal,
-    })
-  } finally {
-    clearTimeout(timer)
-  }
+function postRefresh() {
+  return withTimeout(
+    (signal) =>
+      sessionClient.POST('/api/v1/auth/refresh', {
+        params: { header: CSRF_HEADER },
+        credentials: 'same-origin',
+        signal,
+      }),
+    REFRESH_TIMEOUT_MS,
+  )
 }
 
 async function fetchAccessToken(): Promise<string | null | undefined> {

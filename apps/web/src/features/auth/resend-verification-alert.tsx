@@ -1,19 +1,8 @@
-import { useState } from 'react'
-import { type AcceptedResult, resendVerification } from '@/features/auth/auth-api'
+import { ResendButton, ResendResult } from '@/features/auth/resend-verification-parts'
+import { useResendVerification } from '@/features/auth/use-resend-verification'
 
-const RESULT_MESSAGES: Record<AcceptedResult, string> = {
-  accepted: 'Si la cuenta está pendiente de verificación, te enviamos un nuevo enlace.',
-  'rate-limited': 'Demasiados intentos. Probá de nuevo en 1 minuto.',
-  unavailable: 'No pudimos reenviar el email. Probá de nuevo en unos minutos.',
-}
-
-export function ResendVerificationAlert({ getEmail }: { getEmail: () => string }) {
-  const [result, setResult] = useState<AcceptedResult | 'sending' | null>(null)
-
-  const resend = async () => {
-    setResult('sending')
-    setResult(await resendVerification(getEmail()))
-  }
+export function ResendVerificationAlert({ email }: { email: string }) {
+  const resendState = useResendVerification()
 
   return (
     <div role="alert" className="flex flex-col gap-3 rounded-[14px] border border-warn/30 bg-warn/10 p-3.5">
@@ -23,20 +12,14 @@ export function ResendVerificationAlert({ getEmail }: { getEmail: () => string }
           Abrí el enlace que te enviamos al registrarte. Vence a las 24 horas.
         </span>
       </div>
-      {result !== null && result !== 'sending' ? (
-        <p role="status" className="text-[13px] leading-[1.45]">
-          {RESULT_MESSAGES[result]}
-        </p>
-      ) : (
-        <button
-          type="button"
-          disabled={result === 'sending'}
-          onClick={() => void resend()}
-          className="h-11 rounded-xl border border-warn/40 text-sm font-semibold text-warn disabled:opacity-60"
-        >
-          Reenviar email de verificación
-        </button>
-      )}
+      <ResendResult state={resendState} />
+      <ResendButton
+        type="button"
+        state={resendState}
+        label="Reenviar email de verificación"
+        onClick={() => void resendState.resend(email)}
+        className="h-11 rounded-xl border border-warn/40 text-sm font-semibold text-warn disabled:opacity-60"
+      />
     </div>
   )
 }

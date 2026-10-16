@@ -1,6 +1,6 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react'
-import { http, HttpResponse } from 'msw'
-import { describe, expect, it } from 'vitest'
+import { act, fireEvent, screen, waitFor } from '@testing-library/react'
+import { delay, http, HttpResponse } from 'msw'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { renderApp } from '@/test/render-app'
 import { server } from '@/test/server'
 
@@ -33,6 +33,10 @@ function fillAndSubmit(email = 'ana@example.com', password = 'correct horse batt
 }
 
 describe('/login', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('offers Google sign-in, registration and password recovery', async () => {
     await renderApp('/login')
 
@@ -43,6 +47,7 @@ describe('/login', () => {
     )
     expect(screen.getByRole('link', { name: 'Creá una' })).toHaveAttribute('href', '/register')
     expect(screen.getByRole('link', { name: '¿La olvidaste?' })).toHaveAttribute('href', '/forgot-password')
+    expect(screen.queryByText('Tu email está verificado. Ya podés ingresar.')).not.toBeInTheDocument()
   })
 
   it('validates the fields without calling the API', async () => {
@@ -116,6 +121,30 @@ describe('/login', () => {
     expect(screen.getByRole('button', { name: 'Ingresar' })).toBeEnabled()
   })
 
+  it('gives up on a login that never answers after the timeout', async () => {
+    const attempts: Request[] = []
+    server.use(
+      http.post(LOGIN_URL, async ({ request }) => {
+        attempts.push(request)
+        await delay('infinite')
+      }),
+    )
+    await renderApp('/login')
+    await screen.findByRole('heading', { name: 'Ingresá a tu cuenta' })
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+
+    fillAndSubmit()
+    await vi.waitFor(() => expect(attempts).toHaveLength(1))
+    expect(screen.getByRole('button', { name: 'Ingresando…' })).toBeDisabled()
+    await act(() => vi.advanceTimersByTimeAsync(10_000))
+    vi.useRealTimers()
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'No pudimos ingresar. Probá de nuevo en unos minutos.',
+    )
+    expect(screen.getByRole('button', { name: 'Ingresar' })).toBeEnabled()
+  })
+
   it('offers to resend the verification email to the typed address when unverified', async () => {
     answerLogin(() => problem(403, 'EMAIL_NOT_VERIFIED'))
     const resends: unknown[] = []
@@ -136,6 +165,76 @@ describe('/login', () => {
       await screen.findByText('Si la cuenta está pendiente de verificación, te enviamos un nuevo enlace.'),
     ).toBeInTheDocument()
     expect(resends).toEqual([{ email: 'rami@example.com' }])
+  })
+
+  function answerResends(...statuses: (202 | 429 | 503)[]) {
+    const bodies: unknown[] = []
+    server.use(
+      http.post(RESEND_URL, async ({ request }) => {
+        bodies.push(await request.json())
+        const status = statuses[Math.min(bodies.length, statuses.length) - 1] ?? 202
+        if (status === 202) return HttpResponse.json({ status: 'accepted' }, { status })
+        return problem(status, status === 429 ? 'RATE_LIMITED' : 'SERVICE_BUSY')
+      }),
+    )
+    return bodies
+  }
+
+  it('resends to the submitted address even after the email field changes', async () => {
+    answerLogin(() => problem(403, 'EMAIL_NOT_VERIFIED'))
+    const resends = answerResends(202)
+    await renderApp('/login')
+    await screen.findByRole('heading', { name: 'Ingresá a tu cuenta' })
+
+    fillAndSubmit('rami@example.com')
+    await screen.findByText('Verificá tu email para continuar')
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'otra@example.com' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Reenviar email de verificación' }))
+
+    expect(await screen.findByRole('button', { name: 'Reenviar en 1:00' })).toBeDisabled()
+    expect(resends).toEqual([{ email: 'rami@example.com' }])
+  })
+
+  it('keeps the resend button available for a retry after a failed resend', async () => {
+    answerLogin(() => problem(403, 'EMAIL_NOT_VERIFIED'))
+    const resends = answerResends(503, 202)
+    await renderApp('/login')
+    await screen.findByRole('heading', { name: 'Ingresá a tu cuenta' })
+
+    fillAndSubmit('rami@example.com')
+    fireEvent.click(await screen.findByRole('button', { name: 'Reenviar email de verificación' }))
+    expect(
+      await screen.findByText('No pudimos reenviar el email. Probá de nuevo en unos minutos.'),
+    ).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Reenviar email de verificación' }))
+
+    expect(
+      await screen.findByText('Si la cuenta está pendiente de verificación, te enviamos un nuevo enlace.'),
+    ).toBeInTheDocument()
+    expect(resends).toEqual([{ email: 'rami@example.com' }, { email: 'rami@example.com' }])
+  })
+
+  it('lets the user resend again once the cooldown after a rate limit ends', async () => {
+    answerLogin(() => problem(403, 'EMAIL_NOT_VERIFIED'))
+    const resends = answerResends(429, 202)
+    await renderApp('/login')
+    await screen.findByRole('heading', { name: 'Ingresá a tu cuenta' })
+    fillAndSubmit('rami@example.com')
+    const resendButton = await screen.findByRole('button', { name: 'Reenviar email de verificación' })
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+
+    fireEvent.click(resendButton)
+    await vi.waitFor(() =>
+      expect(screen.getByText('Demasiados intentos. Probá de nuevo en 1 minuto.')).toBeInTheDocument(),
+    )
+    expect(screen.getByRole('button', { name: 'Reenviar en 1:00' })).toBeDisabled()
+    for (let second = 0; second < 60; second += 1) {
+      await act(() => vi.advanceTimersByTimeAsync(1_000))
+    }
+    vi.useRealTimers()
+    fireEvent.click(screen.getByRole('button', { name: 'Reenviar email de verificación' }))
+
+    await waitFor(() => expect(resends).toHaveLength(2))
   })
 
   it('redirects to the dashboard when a session already exists', async () => {
