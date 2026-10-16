@@ -54,6 +54,30 @@ describe('/auth/complete', () => {
     expect(refreshes[0]?.headers.get('X-Requested-With')).toBe('investment-tracker')
   })
 
+  // Runs after a test that leaves the shared router on the dashboard, so the page mounts with this hash.
+  it('never renders text carried in the callback hash', async () => {
+    countRefreshes(200)
+    const rendered: string[] = []
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        rendered.push(mutation.target.textContent ?? '', mutation.oldValue ?? '')
+        mutation.removedNodes.forEach((node) => rendered.push(node.textContent ?? ''))
+      })
+    })
+    observer.observe(document.body, {
+      childList: true,
+      characterData: true,
+      characterDataOldValue: true,
+      subtree: true,
+    })
+
+    await renderComplete('error=INJECTED-ERROR&error_description=INJECTED-DESCRIPTION')
+    expect(await screen.findByRole('heading', { name: ERROR_HEADING })).toBeInTheDocument()
+    observer.disconnect()
+
+    expect(rendered.join(' ')).not.toContain('INJECTED')
+  })
+
   it('shows the Google error state when the refresh is rejected', async () => {
     const refreshes = countRefreshes(401)
 
