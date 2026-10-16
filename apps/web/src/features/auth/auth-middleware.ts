@@ -19,7 +19,9 @@ export const authMiddleware: Middleware = {
     const retry = retryableRequests.get(request)
     retryableRequests.delete(request)
     if (response.status !== 401 || retry === undefined) return undefined
-    if (!(await refreshSession())) return undefined
+    const current = getAccessToken()
+    const hasNewerToken = current !== null && retry.headers.get('Authorization') !== `Bearer ${current}`
+    if (!hasNewerToken && !(await refreshSession())) return undefined
     retry.headers.set('Authorization', `Bearer ${getAccessToken()}`)
     return options.fetch(retry)
   },

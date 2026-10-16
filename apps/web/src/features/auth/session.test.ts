@@ -323,6 +323,30 @@ describe('authenticated API requests', () => {
     ])
   })
 
+  it('retry with the newer token without refreshing again when one arrived meanwhile', async () => {
+    const refreshes = issueTokens('expired-token', 'fresh-token')
+    await modules.session.refreshSession()
+    const authorizations: (string | null)[] = []
+    server.use(
+      http.get(ME_URL, async ({ request }) => {
+        const authorization = request.headers.get('Authorization')
+        authorizations.push(authorization)
+        if (authorization === 'Bearer fresh-token') return HttpResponse.json(PROFILE)
+        await delay(60)
+        return new HttpResponse(null, { status: 401 })
+      }),
+    )
+
+    const pending = modules.apiClient.GET('/api/v1/auth/me')
+    await delay(5)
+    await modules.session.refreshSession()
+    const { response } = await pending
+
+    expect(response.status).toBe(200)
+    expect(refreshes).toHaveLength(2)
+    expect(authorizations).toEqual(['Bearer expired-token', 'Bearer fresh-token'])
+  })
+
   it('clear the session and return the 401 without retrying when the refresh fails', async () => {
     issueTokens('expired-token')
     await modules.session.refreshSession()
