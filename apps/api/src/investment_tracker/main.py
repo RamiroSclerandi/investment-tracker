@@ -5,6 +5,7 @@ from email.utils import parseaddr
 import structlog
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from fastapi import APIRouter, FastAPI
+from slowapi.errors import RateLimitExceeded
 
 from investment_tracker.auth.errors import (
     InvalidRefreshTokenError,
@@ -22,7 +23,10 @@ from investment_tracker.auth.google import (
     google_signing_keys,
 )
 from investment_tracker.auth.jwt import AccessTokens
-from investment_tracker.auth.router import handle_invalid_refresh_token
+from investment_tracker.auth.router import (
+    handle_invalid_refresh_token,
+    handle_rate_limit_exceeded_clearing_oidc_cookie,
+)
 from investment_tracker.auth.router import router as auth_router
 from investment_tracker.core.db import create_engine, create_sessionmaker
 from investment_tracker.core.email import EmailSender, SmtpEmailSender, UnconfiguredEmailSender
@@ -124,6 +128,9 @@ def create_app(
     app.add_exception_handler(PasswordHashingBusyError, handle_password_hashing_busy)
     app.add_exception_handler(OidcUnavailableError, handle_oidc_unavailable)
     register_rate_limiting(app)
+    # Replaces the generic 429 handler: the Google routes carry a single-use state cookie
+    # that must not survive a rate-limited answer.
+    app.add_exception_handler(RateLimitExceeded, handle_rate_limit_exceeded_clearing_oidc_cookie)
     api_router = APIRouter(prefix=API_PREFIX)
     api_router.include_router(ops_router)
     api_router.include_router(auth_router)

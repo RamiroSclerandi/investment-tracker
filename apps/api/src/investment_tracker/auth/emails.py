@@ -29,3 +29,15 @@ def password_reset_email(
         "Si no lo pediste, ignorá este mensaje: tu contraseña no cambia.\n"
     )
     return EmailMessage(to=to, subject="Restablecé tu contraseña", text=text)
+
+
+def google_link_notification_email(*, to: str, display_name: str) -> EmailMessage:
+    # No links: the mailbox owner must use the normal forgot-password flow, never a token
+    # issued by whoever completed the Google link.
+    text = (
+        f"Hola {display_name},\n\n"
+        "Vinculaste el ingreso con Google a tu cuenta de Investment Tracker.\n\n"
+        'Si no fuiste vos, restablecé tu contraseña desde la opción "Olvidé mi contraseña" y '
+        "contactá al dueño de la cuenta.\n"
+    )
+    return EmailMessage(to=to, subject="Vinculaste Google a tu cuenta", text=text)

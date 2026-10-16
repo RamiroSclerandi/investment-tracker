@@ -11,7 +11,11 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from investment_tracker.auth.display_name import DISPLAY_NAME_FORBIDDEN, DISPLAY_NAME_MAX_LENGTH
-from investment_tracker.auth.emails import password_reset_email, verification_email
+from investment_tracker.auth.emails import (
+    google_link_notification_email,
+    password_reset_email,
+    verification_email,
+)
 from investment_tracker.auth.errors import (
     EmailNotVerifiedError,
     InvalidAccessTokenError,
@@ -425,7 +429,7 @@ class GoogleSignInService:
         error: str | None,
         user_agent: str | None,
         ip: str | None,
-    ) -> str:
+    ) -> tuple[str, EmailMessage | None]:
         pending = self._state_codec.decode(cookie)
         if not state or not hmac.compare_digest(state.encode(), pending.state.encode()):
             raise GoogleSignInError("state_mismatch")
@@ -448,26 +452,33 @@ class GoogleSignInService:
 
     async def _start_session(
         self, identity: GoogleIdentity, user_agent: str | None, ip: str | None
-    ) -> str:
+    ) -> tuple[str, EmailMessage | None]:
         raw, token_hash = new_token()
+        notification: EmailMessage | None = None
         async with self._session.begin():
-            user = await self._resolve_user(identity)
+            user, linked_to_verified_local = await self._resolve_user(identity)
             if user is not None:
                 expires_at = datetime.now(UTC) + REFRESH_TOKEN_TTL
                 self._refresh_tokens.add(
                     new_refresh_token(user.id, uuid.uuid4(), token_hash, expires_at, user_agent, ip)
                 )
+                if linked_to_verified_local:
+                    # The link happened without any password proof, so the mailbox must learn.
+                    notification = google_link_notification_email(
+                        to=user.email, display_name=user.display_name
+                    )
         if user is None:
             raise GoogleSignInError("inactive_user")
-        return raw
+        return raw, notification
 
-    async def _resolve_user(self, identity: GoogleIdentity) -> User | None:
+    async def _resolve_user(self, identity: GoogleIdentity) -> tuple[User | None, bool]:
         account = await self._accounts.get(OAuthProvider.GOOGLE, identity.subject)
         if account is not None:
             linked = await self._users.get_for_update(account.user_id)
-            return linked if linked is not None and linked.is_active else None
+            return (linked if linked is not None and linked.is_active else None), False
         now = datetime.now(UTC)
         user = await self._users.get_by_email_for_update(identity.email)
+        links_verified_account = user is not None and user.email_verified_at is not None
         if user is None:
             user = User(
                 email=identity.email,
@@ -478,7 +489,7 @@ class GoogleSignInService:
             )
             await self._users.add(user)
         elif not user.is_active:
-            return None
+            return None, False
         elif user.email_verified_at is None:
             await self._claim_unverified(user, identity, now)
         await self._accounts.add(
@@ -489,7 +500,7 @@ class GoogleSignInService:
                 email=identity.email,
             )
         )
-        return user
+        return user, links_verified_account
 
     async def _claim_unverified(self, user: User, identity: GoogleIdentity, now: datetime) -> None:
         # Whoever registered first may not own the mailbox, so nothing they chose survives.
