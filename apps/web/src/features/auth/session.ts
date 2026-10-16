@@ -13,7 +13,7 @@ const sessionClient = createClient<paths>({ baseUrl: window.location.origin })
 
 let accessToken: string | null = null
 let status: AuthStatus = 'loading'
-let pendingRefresh: Promise<boolean> | null = null
+let pendingRefresh: Promise<RefreshOutcome> | null = null
 // Bumped by logout so a refresh that was already in flight cannot sign the user back in.
 let sessionGeneration = 0
 const listeners = new Set<() => void>()
@@ -71,23 +71,30 @@ async function fetchAccessToken(): Promise<string | null | undefined> {
   }
 }
 
-async function requestAccessToken(): Promise<boolean> {
+export type RefreshOutcome = 'refreshed' | 'rejected' | 'unavailable'
+
+async function requestAccessToken(): Promise<RefreshOutcome> {
   const startedAt = sessionGeneration
   const token = await fetchAccessToken()
-  if (startedAt !== sessionGeneration) return false
+  if (startedAt !== sessionGeneration) return 'rejected'
   if (token !== undefined || accessToken === null) setAccessToken(token ?? null)
-  return typeof token === 'string'
+  if (token === undefined) return 'unavailable'
+  return token === null ? 'rejected' : 'refreshed'
 }
 
-export function getPendingRefresh(): Promise<boolean> | null {
+export function getPendingRefresh(): Promise<RefreshOutcome> | null {
   return pendingRefresh
 }
 
-export function refreshSession(): Promise<boolean> {
+export function refreshSessionOutcome(): Promise<RefreshOutcome> {
   pendingRefresh ??= requestAccessToken().finally(() => {
     pendingRefresh = null
   })
   return pendingRefresh
+}
+
+export async function refreshSession(): Promise<boolean> {
+  return (await refreshSessionOutcome()) === 'refreshed'
 }
 
 export async function logout(): Promise<void> {

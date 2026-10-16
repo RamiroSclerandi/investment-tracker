@@ -16,7 +16,7 @@ async function waitForPendingRefresh(): Promise<void> {
   const bound = new Promise<void>((resolve) => {
     timer = setTimeout(resolve, REFRESH_TIMEOUT_MS)
   })
-  await Promise.race([pending.catch(() => false), bound])
+  await Promise.race([pending, bound])
   clearTimeout(timer)
 }
 
