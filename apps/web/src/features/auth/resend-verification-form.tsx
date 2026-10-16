@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { z } from 'zod'
 import { FieldError, FieldLabel, TextInput } from '@/features/auth/auth-form-parts'
 import { emailSchema } from '@/features/auth/auth-schemas'
@@ -12,11 +12,12 @@ type ResendValues = z.infer<typeof resendSchema>
 
 // The verification token does not reveal its address, so the user types the email to send a new link to.
 export function ResendVerificationForm() {
-  const resendState = useResendVerification()
-  const { register, handleSubmit, formState } = useForm<ResendValues>({
+  const { register, handleSubmit, formState, control } = useForm<ResendValues>({
     resolver: zodResolver(resendSchema),
     defaultValues: { email: '' },
   })
+  const email = useWatch({ control, name: 'email' })
+  const resendState = useResendVerification(email)
 
   return (
     <form

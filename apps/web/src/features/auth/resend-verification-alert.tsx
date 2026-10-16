@@ -2,7 +2,7 @@ import { ResendButton, ResendResult } from '@/features/auth/resend-verification-
 import { useResendVerification } from '@/features/auth/use-resend-verification'
 
 export function ResendVerificationAlert({ email }: { email: string }) {
-  const resendState = useResendVerification()
+  const resendState = useResendVerification(email)
 
   return (
     <div role="alert" className="flex flex-col gap-3 rounded-[14px] border border-warn/30 bg-warn/10 p-3.5">
