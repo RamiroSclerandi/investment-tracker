@@ -223,6 +223,25 @@ describe('refresh and logout requests', () => {
     expect(modules.session.getAuthStatus()).toBe('anonymous')
   })
 
+  it('ignore a refresh that completes after logout started', async () => {
+    issueTokens('token')
+    await modules.session.refreshSession()
+    server.use(
+      http.post(REFRESH_URL, async () => {
+        await delay(50)
+        return tokenResponse('late-token')
+      }),
+      http.post(LOGOUT_URL, () => new HttpResponse(null, { status: 204 })),
+    )
+
+    const refresh = modules.session.refreshSession()
+    await modules.session.logout()
+
+    await expect(refresh).resolves.toBe(false)
+    expect(modules.session.getAccessToken()).toBeNull()
+    expect(modules.session.getAuthStatus()).toBe('anonymous')
+  })
+
   it('keeps the access token out of web storage and cookies', async () => {
     issueTokens('secret-access-token')
 

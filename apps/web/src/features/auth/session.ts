@@ -12,6 +12,8 @@ const sessionClient = createClient<paths>({ baseUrl: window.location.origin })
 let accessToken: string | null = null
 let status: AuthStatus = 'loading'
 let pendingRefresh: Promise<boolean> | null = null
+// Bumped by logout so a refresh that was already in flight cannot sign the user back in.
+let sessionGeneration = 0
 const listeners = new Set<() => void>()
 
 export function getAccessToken(): string | null {
@@ -59,7 +61,9 @@ async function fetchAccessToken(): Promise<string | null | undefined> {
 }
 
 async function requestAccessToken(): Promise<boolean> {
+  const startedAt = sessionGeneration
   const token = await fetchAccessToken()
+  if (startedAt !== sessionGeneration) return false
   if (token !== undefined || accessToken === null) setAccessToken(token ?? null)
   return typeof token === 'string'
 }
@@ -72,6 +76,7 @@ export function refreshSession(): Promise<boolean> {
 }
 
 export async function logout(): Promise<void> {
+  sessionGeneration += 1
   try {
     await sessionClient.POST('/api/v1/auth/logout', {
       params: { header: CSRF_HEADER },
