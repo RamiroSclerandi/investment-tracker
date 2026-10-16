@@ -265,6 +265,19 @@ describe('authenticated API requests', () => {
     expect(authorizations).toEqual(['Bearer token-a'])
   })
 
+  it('wait for the pending boot refresh and send the request once with its token', async () => {
+    const refreshes = issueTokens('boot-token')
+    const authorizations = profileAcceptingOnly('boot-token')
+
+    const boot = modules.session.refreshSession()
+    const { response } = await modules.apiClient.GET('/api/v1/auth/me')
+    await boot
+
+    expect(response.status).toBe(200)
+    expect(refreshes).toHaveLength(1)
+    expect(authorizations).toEqual(['Bearer boot-token'])
+  })
+
   it('send no authorization header to another origin', async () => {
     issueTokens('token-a')
     await modules.session.refreshSession()

@@ -68,6 +68,10 @@ async function requestAccessToken(): Promise<boolean> {
   return typeof token === 'string'
 }
 
+export function getPendingRefresh(): Promise<boolean> | null {
+  return pendingRefresh
+}
+
 export function refreshSession(): Promise<boolean> {
   pendingRefresh ??= requestAccessToken().finally(() => {
     pendingRefresh = null
