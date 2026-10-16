@@ -33,6 +33,25 @@ describe('App', () => {
     expect(screen.getByRole('navigation', { name: 'Primary' })).toBeInTheDocument()
   })
 
+  it('redirects an anonymous visitor from a protected route to /login', async () => {
+    server.use(http.post('*/api/v1/auth/refresh', () => new HttpResponse(null, { status: 401 })))
+    const { router, session } = await renderApp('/')
+
+    await session.refreshSession()
+
+    expect(await screen.findByRole('heading', { name: 'Ingresá a tu cuenta' })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/login')
+    expect(screen.queryByRole('heading', { name: 'Dashboard' })).not.toBeInTheDocument()
+  })
+
+  it('shows the loading state without redirecting while the session is unknown', async () => {
+    const { router } = await renderApp('/transactions')
+
+    expect(await screen.findByRole('status', { name: 'Cargando tu sesión' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Transactions' })).not.toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/transactions')
+  })
+
   it('renders /login in the brand split layout without the app navigation', async () => {
     await renderApp('/login')
 
