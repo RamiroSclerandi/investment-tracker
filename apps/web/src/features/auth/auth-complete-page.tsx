@@ -1,10 +1,10 @@
 import { Link, useLocation, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
-import { refreshSession } from '@/features/auth/session'
+import { getAuthStatus, refreshSessionOutcome } from '@/features/auth/session'
 
 const GOOGLE_START_URL = '/api/v1/auth/google/start'
 
-type Phase = 'connecting' | 'failed'
+type Phase = 'connecting' | 'failed' | 'unreachable'
 
 export function AuthCompletePage() {
   const navigate = useNavigate()
@@ -20,17 +20,41 @@ export function AuthCompletePage() {
   useEffect(() => {
     if (phase !== 'connecting') return
     let isCurrent = true
-    void refreshSession().then((isSignedIn) => {
+    void refreshSessionOutcome().then((outcome) => {
       if (!isCurrent) return
+      const isSignedIn =
+        outcome === 'refreshed' || (outcome === 'superseded' && getAuthStatus() === 'authenticated')
       if (isSignedIn) void navigate({ to: '/', replace: true })
-      else setPhase('failed')
+      else setPhase(outcome === 'unavailable' ? 'unreachable' : 'failed')
     })
     return () => {
       isCurrent = false
     }
   }, [phase, navigate])
 
-  return phase === 'connecting' ? <ConnectingState /> : <GoogleErrorState />
+  if (phase === 'connecting') return <ConnectingState />
+  if (phase === 'unreachable') return <UnreachableState onRetry={() => setPhase('connecting')} />
+  return <GoogleErrorState />
+}
+
+function UnreachableState({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div className="flex flex-col gap-[22px]">
+      <div className="flex flex-col gap-2.5">
+        <h1 className="text-2xl font-semibold tracking-[-0.02em]">No pudimos conectar</h1>
+        <p className="text-[15px] leading-[1.55] text-muted-foreground">
+          Revisá tu conexión y volvé a intentarlo.
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="h-[52px] rounded-[14px] bg-primary text-base font-semibold text-primary-foreground"
+      >
+        Reintentar
+      </button>
+    </div>
+  )
 }
 
 function ConnectingState() {

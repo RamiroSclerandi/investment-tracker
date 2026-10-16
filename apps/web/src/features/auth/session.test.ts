@@ -86,20 +86,32 @@ describe('silent refresh on boot', () => {
     expect(modules.session.getAccessToken()).toBeNull()
   })
 
-  it('treats a network failure during refresh as signed out', async () => {
+  it('marks the session unavailable on a network failure during the boot refresh', async () => {
     server.use(http.post(REFRESH_URL, () => HttpResponse.error()))
 
     await expect(modules.session.refreshSession()).resolves.toBe(false)
 
-    expect(modules.session.getAuthStatus()).toBe('anonymous')
+    expect(modules.session.getAuthStatus()).toBe('unavailable')
   })
 
-  it('treats a server error during the boot refresh as signed out', async () => {
+  it('moves an unavailable session back to loading while a retry runs', async () => {
+    server.use(http.post(REFRESH_URL, () => new HttpResponse(null, { status: 503 })))
+    await modules.session.refreshSession()
+    issueTokens('retry-token')
+
+    const retry = modules.session.refreshSession()
+
+    expect(modules.session.getAuthStatus()).toBe('loading')
+    await retry
+    expect(modules.session.getAuthStatus()).toBe('authenticated')
+  })
+
+  it('marks the session unavailable on a server error during the boot refresh', async () => {
     server.use(http.post(REFRESH_URL, () => new HttpResponse(null, { status: 503 })))
 
     await expect(modules.session.refreshSession()).resolves.toBe(false)
 
-    expect(modules.session.getAuthStatus()).toBe('anonymous')
+    expect(modules.session.getAuthStatus()).toBe('unavailable')
   })
 })
 
@@ -158,6 +170,103 @@ function installFakeLocks() {
   Object.defineProperty(navigator, 'locks', { value: locks, configurable: true })
   return names
 }
+
+describe('signing in with a password', () => {
+  it('adopts the token and marks the session authenticated', () => {
+    modules.session.signIn('login-token')
+
+    expect(modules.session.getAccessToken()).toBe('login-token')
+    expect(modules.session.getAuthStatus()).toBe('authenticated')
+  })
+
+  it('keeps the sign-in when a refresh that started earlier is rejected afterwards', async () => {
+    server.use(
+      http.post(REFRESH_URL, async () => {
+        await delay(30)
+        return new HttpResponse(null, { status: 401 })
+      }),
+    )
+    const refresh = modules.session.refreshSession()
+
+    modules.session.signIn('login-token')
+
+    await expect(refresh).resolves.toBe(false)
+    expect(modules.session.getAccessToken()).toBe('login-token')
+    expect(modules.session.getAuthStatus()).toBe('authenticated')
+  })
+
+  it('reports a refresh overtaken by a sign-in as superseded, not rejected', async () => {
+    issueTokens('late-token')
+    const refresh = modules.session.refreshSessionOutcome()
+
+    modules.session.signIn('login-token')
+
+    await expect(refresh).resolves.toBe('superseded')
+    expect(modules.session.getAccessToken()).toBe('login-token')
+  })
+})
+
+describe('malformed or hung refreshes', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  function answerRefreshWithHtml() {
+    server.use(
+      http.post(
+        REFRESH_URL,
+        () => new HttpResponse('<html>oops</html>', { status: 200, headers: { 'Content-Type': 'text/html' } }),
+      ),
+    )
+  }
+
+  it('resolve false instead of rejecting when the refresh answers 200 with a non-JSON body', async () => {
+    answerRefreshWithHtml()
+
+    await expect(modules.session.refreshSession()).resolves.toBe(false)
+
+    expect(modules.session.getAuthStatus()).toBe('unavailable')
+  })
+
+  it('return the original 401 when the retry refresh answers with a non-JSON body', async () => {
+    issueTokens('held-token')
+    await modules.session.refreshSession()
+    profileAcceptingOnly('never-issued')
+    answerRefreshWithHtml()
+
+    const { response } = await modules.apiClient.GET('/api/v1/auth/me')
+
+    expect(response.status).toBe(401)
+    expect(modules.session.getAccessToken()).toBe('held-token')
+  })
+
+  it('give up on a refresh that never answers after the timeout', async () => {
+    server.use(http.post(REFRESH_URL, () => delay('infinite')))
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+
+    const refresh = modules.session.refreshSession()
+    await vi.advanceTimersByTimeAsync(10_000)
+
+    await expect(refresh).resolves.toBe(false)
+    expect(modules.session.getAuthStatus()).toBe('unavailable')
+  })
+
+  it('send a request with the current token once a hung refresh exceeds the wait bound', async () => {
+    issueTokens('held-token')
+    await modules.session.refreshSession()
+    const authorizations = profileAcceptingOnly('held-token')
+    server.use(http.post(REFRESH_URL, () => delay('infinite')))
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    void modules.session.refreshSession()
+
+    const request = modules.apiClient.GET('/api/v1/auth/me')
+    await vi.advanceTimersByTimeAsync(10_000)
+    const { response } = await request
+
+    expect(response.status).toBe(200)
+    expect(authorizations).toEqual(['Bearer held-token'])
+  })
+})
 
 describe('refresh across tabs', () => {
   afterEach(() => {

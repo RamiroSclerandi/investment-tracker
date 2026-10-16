@@ -1,18 +1,20 @@
 import createClient from 'openapi-fetch'
 import type { paths } from '@/api/generated/schema'
 
-export type AuthStatus = 'loading' | 'authenticated' | 'anonymous'
+export type AuthStatus = 'loading' | 'authenticated' | 'anonymous' | 'unavailable'
 
 const CSRF_HEADER = { 'x-requested-with': 'investment-tracker' }
 const REFRESH_LOCK = 'it-refresh'
+// Bounds a hung refresh so it cannot hold the cross-tab lock, or block waiting requests, forever.
+export const REFRESH_TIMEOUT_MS = 10_000
 
 // Separate client without the auth middleware, so a failing refresh can never trigger another refresh.
 const sessionClient = createClient<paths>({ baseUrl: window.location.origin })
 
 let accessToken: string | null = null
 let status: AuthStatus = 'loading'
-let pendingRefresh: Promise<boolean> | null = null
-// Bumped by logout so a refresh that was already in flight cannot sign the user back in.
+let pendingRefresh: Promise<RefreshOutcome> | null = null
+// Bumped by sign-in and logout so a refresh already in flight cannot overwrite the session that followed it.
 let sessionGeneration = 0
 const listeners = new Set<() => void>()
 
@@ -29,12 +31,15 @@ export function subscribeAuthStatus(listener: () => void): () => void {
   return () => listeners.delete(listener)
 }
 
-function setAccessToken(token: string | null) {
-  accessToken = token
-  const nextStatus = token === null ? 'anonymous' : 'authenticated'
+function setStatus(nextStatus: AuthStatus) {
   if (nextStatus === status) return
   status = nextStatus
   listeners.forEach((listener) => listener())
+}
+
+function setAccessToken(token: string | null) {
+  accessToken = token
+  setStatus(token === null ? 'anonymous' : 'authenticated')
 }
 
 // Tabs refreshing at once would present the same it_rt; the API treats the second as reuse and revokes the family.
@@ -44,39 +49,63 @@ function withRefreshLock<T>(task: () => Promise<T>): Promise<T> {
 }
 
 // Resolves the new token, null when the API rejects the session, or undefined on a transient failure.
+async function postRefresh() {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), REFRESH_TIMEOUT_MS)
+  try {
+    return await sessionClient.POST('/api/v1/auth/refresh', {
+      params: { header: CSRF_HEADER },
+      credentials: 'same-origin',
+      signal: controller.signal,
+    })
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 async function fetchAccessToken(): Promise<string | null | undefined> {
   try {
-    const { data, response } = await withRefreshLock(() =>
-      sessionClient.POST('/api/v1/auth/refresh', {
-        params: { header: CSRF_HEADER },
-        credentials: 'same-origin',
-      }),
-    )
+    const { data, response } = await withRefreshLock(postRefresh)
     if (data) return data.access_token
     return response.status === 401 ? null : undefined
-  } catch (error) {
-    if (!(error instanceof TypeError)) throw error
+  } catch {
+    // Network errors, timeouts and unparseable bodies are all transient: none proves the session is gone.
     return undefined
   }
 }
 
-async function requestAccessToken(): Promise<boolean> {
+export type RefreshOutcome = 'refreshed' | 'rejected' | 'unavailable' | 'superseded'
+
+async function requestAccessToken(): Promise<RefreshOutcome> {
   const startedAt = sessionGeneration
   const token = await fetchAccessToken()
-  if (startedAt !== sessionGeneration) return false
-  if (token !== undefined || accessToken === null) setAccessToken(token ?? null)
-  return typeof token === 'string'
+  if (startedAt !== sessionGeneration) return 'superseded'
+  if (token !== undefined) setAccessToken(token)
+  // Without a held token a transient failure proves nothing either way, so the user is not sent to log in.
+  else if (status === 'loading') setStatus('unavailable')
+  if (token === undefined) return 'unavailable'
+  return token === null ? 'rejected' : 'refreshed'
 }
 
-export function getPendingRefresh(): Promise<boolean> | null {
+export function getPendingRefresh(): Promise<RefreshOutcome> | null {
   return pendingRefresh
 }
 
-export function refreshSession(): Promise<boolean> {
+export function refreshSessionOutcome(): Promise<RefreshOutcome> {
+  if (pendingRefresh === null && status === 'unavailable') setStatus('loading')
   pendingRefresh ??= requestAccessToken().finally(() => {
     pendingRefresh = null
   })
   return pendingRefresh
+}
+
+export async function refreshSession(): Promise<boolean> {
+  return (await refreshSessionOutcome()) === 'refreshed'
+}
+
+export function signIn(token: string): void {
+  sessionGeneration += 1
+  setAccessToken(token)
 }
 
 export async function logout(): Promise<void> {
