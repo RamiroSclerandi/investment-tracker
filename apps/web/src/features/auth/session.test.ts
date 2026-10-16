@@ -209,6 +209,7 @@ describe('signing in with a password', () => {
 describe('malformed or hung refreshes', () => {
   afterEach(() => {
     vi.useRealTimers()
+    Reflect.deleteProperty(navigator, 'locks')
   })
 
   function answerRefreshWithHtml() {
@@ -251,11 +252,12 @@ describe('malformed or hung refreshes', () => {
     expect(modules.session.getAuthStatus()).toBe('unavailable')
   })
 
-  it('send a request with the current token once a hung refresh exceeds the wait bound', async () => {
+  it('send a request with the current token once a refresh stuck behind another tab exceeds the wait bound', async () => {
     issueTokens('held-token')
     await modules.session.refreshSession()
     const authorizations = profileAcceptingOnly('held-token')
-    server.use(http.post(REFRESH_URL, () => delay('infinite')))
+    // A lock that is never granted keeps the refresh pending without starting its own abort timer.
+    Object.defineProperty(navigator, 'locks', { value: { request: () => new Promise(() => undefined) }, configurable: true })
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
     void modules.session.refreshSession()
 

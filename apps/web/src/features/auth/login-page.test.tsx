@@ -1,6 +1,6 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react'
-import { http, HttpResponse } from 'msw'
-import { describe, expect, it } from 'vitest'
+import { act, fireEvent, screen, waitFor } from '@testing-library/react'
+import { delay, http, HttpResponse } from 'msw'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { renderApp } from '@/test/render-app'
 import { server } from '@/test/server'
 
@@ -33,6 +33,10 @@ function fillAndSubmit(email = 'ana@example.com', password = 'correct horse batt
 }
 
 describe('/login', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('offers Google sign-in, registration and password recovery', async () => {
     await renderApp('/login')
 
@@ -109,6 +113,30 @@ describe('/login', () => {
     await screen.findByRole('heading', { name: 'Ingresá a tu cuenta' })
 
     fillAndSubmit()
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'No pudimos ingresar. Probá de nuevo en unos minutos.',
+    )
+    expect(screen.getByRole('button', { name: 'Ingresar' })).toBeEnabled()
+  })
+
+  it('gives up on a login that never answers after the timeout', async () => {
+    const attempts: Request[] = []
+    server.use(
+      http.post(LOGIN_URL, async ({ request }) => {
+        attempts.push(request)
+        await delay('infinite')
+      }),
+    )
+    await renderApp('/login')
+    await screen.findByRole('heading', { name: 'Ingresá a tu cuenta' })
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+
+    fillAndSubmit()
+    await vi.waitFor(() => expect(attempts).toHaveLength(1))
+    expect(screen.getByRole('button', { name: 'Ingresando…' })).toBeDisabled()
+    await act(() => vi.advanceTimersByTimeAsync(10_000))
+    vi.useRealTimers()
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'No pudimos ingresar. Probá de nuevo en unos minutos.',
