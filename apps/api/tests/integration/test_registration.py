@@ -417,14 +417,12 @@ async def test_register_is_limited_to_three_per_minute_per_client_ip(
     client: httpx.AsyncClient,
 ) -> None:
     headers = {"CF-Connecting-IP": "203.0.113.7"}
-    statuses = [
-        (
-            await client.post(
-                "/api/v1/auth/register",
-                json=_register_body(email=f"user{index}@example.com"),
-                headers=headers,
-            )
-        ).status_code
+    responses = [
+        await client.post(
+            "/api/v1/auth/register",
+            json=_register_body(email=f"user{index}@example.com"),
+            headers=headers,
+        )
         for index in range(4)
     ]
     other_ip = await client.post(
@@ -433,7 +431,8 @@ async def test_register_is_limited_to_three_per_minute_per_client_ip(
         headers={"CF-Connecting-IP": "203.0.113.8"},
     )
 
-    assert statuses == [202, 202, 202, 429]
+    assert [response.status_code for response in responses] == [202, 202, 202, 429]
+    assert responses[-1].headers["retry-after"] == "60"
     assert other_ip.status_code == 202
 
 
@@ -448,6 +447,7 @@ async def test_rate_limited_responses_are_problem_json(client: httpx.AsyncClient
     assert response.status_code == 429
     assert response.headers["content-type"] == "application/problem+json"
     assert response.json()["code"] == "RATE_LIMITED"
+    assert response.headers["retry-after"] == "60"
 
 
 async def test_a_failed_email_delivery_still_answers_accepted(
