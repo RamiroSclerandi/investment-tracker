@@ -51,3 +51,19 @@ export function resendVerification(email: string): Promise<AcceptedResult> {
     apiClient.POST('/api/v1/auth/resend-verification', { body: { email }, signal }),
   )
 }
+
+export type VerifyResult = 'verified' | 'invalid' | 'rate-limited' | 'unavailable'
+
+export async function verifyEmail(body: Schemas['VerifyEmailRequest']): Promise<VerifyResult> {
+  try {
+    const { data, response } = await withTimeout((signal) =>
+      apiClient.POST('/api/v1/auth/verify-email', { body, signal }),
+    )
+    if (data) return 'verified'
+    // The API answers the same 400 for a bad or used token and for a wrong password.
+    if (response.status === 400) return 'invalid'
+    return response.status === 429 ? 'rate-limited' : 'unavailable'
+  } catch {
+    return 'unavailable'
+  }
+}

@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Link, Navigate } from '@tanstack/react-router'
+import { Link, Navigate, useSearch } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -36,6 +36,7 @@ const FAILURE_MESSAGES: Record<Exclude<Failure, 'unverified'>, string> = {
 
 export function LoginPage() {
   const status = useAuthStatus()
+  const isJustVerified = useSearch({ strict: false, select: (search) => search.verified === true })
   const [failure, setFailure] = useState<Failure | null>(null)
   const [submittedEmail, setSubmittedEmail] = useState('')
   const { register, handleSubmit, resetField, setFocus, formState } = useForm<LoginValues>({
@@ -68,6 +69,11 @@ export function LoginPage() {
         <h1 className="text-[26px] font-semibold tracking-[-0.02em]">Ingresá a tu cuenta</h1>
       </div>
       <form noValidate onSubmit={(event) => void handleSubmit(onSubmit)(event)} className="flex flex-col gap-4">
+        {isJustVerified && failure === null && (
+          <p role="status" className="rounded-xl border border-gain/35 bg-gain/10 px-3.5 py-3 text-sm leading-[1.45]">
+            Tu email está verificado. Ya podés ingresar.
+          </p>
+        )}
         {failure === 'unverified' ? (
           <ResendVerificationAlert email={submittedEmail} />
         ) : (

@@ -47,6 +47,7 @@ describe('/login', () => {
     )
     expect(screen.getByRole('link', { name: 'Creá una' })).toHaveAttribute('href', '/register')
     expect(screen.getByRole('link', { name: '¿La olvidaste?' })).toHaveAttribute('href', '/forgot-password')
+    expect(screen.queryByText('Tu email está verificado. Ya podés ingresar.')).not.toBeInTheDocument()
   })
 
   it('validates the fields without calling the API', async () => {
