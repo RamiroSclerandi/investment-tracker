@@ -1,4 +1,5 @@
 import { type ComponentProps, type ReactNode, useState } from 'react'
+import { PASSWORD_MIN_LENGTH } from '@/features/auth/auth-schemas'
 import { cn } from '@/lib/utils'
 
 export const GOOGLE_START_URL = '/api/v1/auth/google/start'
@@ -84,6 +85,14 @@ export function PasswordInput(props: InputProps) {
         </svg>
       </button>
     </div>
+  )
+}
+
+export function PasswordLength({ length }: { length: number }) {
+  return (
+    <span className="text-xs text-subtle-foreground tabular-nums">
+      {length} / {PASSWORD_MIN_LENGTH}
+    </span>
   )
 }
 

@@ -3,6 +3,7 @@ import { AuthLayout } from '@/components/auth-layout'
 import { PlaceholderPage } from '@/components/placeholder-page'
 import { AuthCompletePage } from '@/features/auth/auth-complete-page'
 import { LoginPage } from '@/features/auth/login-page'
+import { RegisterPage } from '@/features/auth/register-page'
 import { rootRoute } from '@/routes/__root'
 
 export const authLayoutRoute = createRoute({
@@ -12,7 +13,6 @@ export const authLayoutRoute = createRoute({
 })
 
 const AUTH_PAGES = [
-  { path: '/register', title: 'Register' },
   { path: '/verify-email', title: 'Verify your email' },
   { path: '/forgot-password', title: 'Forgot password' },
   { path: '/reset-password', title: 'Reset password' },
@@ -30,8 +30,15 @@ const loginRoute = createRoute({
   component: LoginPage,
 })
 
+const registerRoute = createRoute({
+  getParentRoute: () => authLayoutRoute,
+  path: '/register',
+  component: RegisterPage,
+})
+
 export const authRoutes = [
   loginRoute,
+  registerRoute,
   ...AUTH_PAGES.map(({ path, title }) =>
     createRoute({
       getParentRoute: () => authLayoutRoute,
