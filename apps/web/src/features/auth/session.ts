@@ -5,6 +5,8 @@ export type AuthStatus = 'loading' | 'authenticated' | 'anonymous'
 
 const CSRF_HEADER = { 'x-requested-with': 'investment-tracker' }
 const REFRESH_LOCK = 'it-refresh'
+// Bounds a hung refresh so it cannot hold the cross-tab lock, or block waiting requests, forever.
+export const REFRESH_TIMEOUT_MS = 10_000
 
 // Separate client without the auth middleware, so a failing refresh can never trigger another refresh.
 const sessionClient = createClient<paths>({ baseUrl: window.location.origin })
@@ -44,18 +46,27 @@ function withRefreshLock<T>(task: () => Promise<T>): Promise<T> {
 }
 
 // Resolves the new token, null when the API rejects the session, or undefined on a transient failure.
+async function postRefresh() {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), REFRESH_TIMEOUT_MS)
+  try {
+    return await sessionClient.POST('/api/v1/auth/refresh', {
+      params: { header: CSRF_HEADER },
+      credentials: 'same-origin',
+      signal: controller.signal,
+    })
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 async function fetchAccessToken(): Promise<string | null | undefined> {
   try {
-    const { data, response } = await withRefreshLock(() =>
-      sessionClient.POST('/api/v1/auth/refresh', {
-        params: { header: CSRF_HEADER },
-        credentials: 'same-origin',
-      }),
-    )
+    const { data, response } = await withRefreshLock(postRefresh)
     if (data) return data.access_token
     return response.status === 401 ? null : undefined
-  } catch (error) {
-    if (!(error instanceof TypeError)) throw error
+  } catch {
+    // Network errors, timeouts and unparseable bodies are all transient: none proves the session is gone.
     return undefined
   }
 }

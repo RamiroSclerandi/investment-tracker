@@ -159,6 +159,68 @@ function installFakeLocks() {
   return names
 }
 
+describe('malformed or hung refreshes', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  function answerRefreshWithHtml() {
+    server.use(
+      http.post(
+        REFRESH_URL,
+        () => new HttpResponse('<html>oops</html>', { status: 200, headers: { 'Content-Type': 'text/html' } }),
+      ),
+    )
+  }
+
+  it('resolve false instead of rejecting when the refresh answers 200 with a non-JSON body', async () => {
+    answerRefreshWithHtml()
+
+    await expect(modules.session.refreshSession()).resolves.toBe(false)
+
+    expect(modules.session.getAuthStatus()).toBe('anonymous')
+  })
+
+  it('return the original 401 when the retry refresh answers with a non-JSON body', async () => {
+    issueTokens('held-token')
+    await modules.session.refreshSession()
+    profileAcceptingOnly('never-issued')
+    answerRefreshWithHtml()
+
+    const { response } = await modules.apiClient.GET('/api/v1/auth/me')
+
+    expect(response.status).toBe(401)
+    expect(modules.session.getAccessToken()).toBe('held-token')
+  })
+
+  it('give up on a refresh that never answers after the timeout', async () => {
+    server.use(http.post(REFRESH_URL, () => delay('infinite')))
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+
+    const refresh = modules.session.refreshSession()
+    await vi.advanceTimersByTimeAsync(10_000)
+
+    await expect(refresh).resolves.toBe(false)
+    expect(modules.session.getAuthStatus()).toBe('anonymous')
+  })
+
+  it('send a request with the current token once a hung refresh exceeds the wait bound', async () => {
+    issueTokens('held-token')
+    await modules.session.refreshSession()
+    const authorizations = profileAcceptingOnly('held-token')
+    server.use(http.post(REFRESH_URL, () => delay('infinite')))
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    void modules.session.refreshSession()
+
+    const request = modules.apiClient.GET('/api/v1/auth/me')
+    await vi.advanceTimersByTimeAsync(10_000)
+    const { response } = await request
+
+    expect(response.status).toBe(200)
+    expect(authorizations).toEqual(['Bearer held-token'])
+  })
+})
+
 describe('refresh across tabs', () => {
   afterEach(() => {
     Reflect.deleteProperty(navigator, 'locks')
