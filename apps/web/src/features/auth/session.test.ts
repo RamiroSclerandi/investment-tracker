@@ -353,6 +353,47 @@ describe('refresh and logout requests', () => {
     expect(modules.session.getAuthStatus()).toBe('anonymous')
   })
 
+  it('clears the pending refresh on logout', async () => {
+    issueTokens('token')
+    await modules.session.refreshSession()
+    server.use(
+      http.post(REFRESH_URL, async () => {
+        await delay(50)
+        return tokenResponse('late-token')
+      }),
+      http.post(LOGOUT_URL, () => new HttpResponse(null, { status: 204 })),
+    )
+
+    void modules.session.refreshSession()
+    expect(modules.session.getPendingRefresh()).not.toBeNull()
+    await modules.session.logout()
+
+    expect(modules.session.getPendingRefresh()).toBeNull()
+  })
+
+  it('keeps a newer pending refresh when a refresh left behind by logout settles', async () => {
+    const releases: (() => void)[] = []
+    server.use(
+      http.post(REFRESH_URL, async () => {
+        await new Promise<void>((resolve) => releases.push(resolve))
+        return tokenResponse('token')
+      }),
+      http.post(LOGOUT_URL, () => new HttpResponse(null, { status: 204 })),
+    )
+
+    const staleRefresh = modules.session.refreshSessionOutcome()
+    await vi.waitFor(() => expect(releases).toHaveLength(1))
+    await modules.session.logout()
+    const newerRefresh = modules.session.refreshSessionOutcome()
+    await vi.waitFor(() => expect(releases).toHaveLength(2))
+    releases[0]?.()
+    await staleRefresh
+
+    expect(modules.session.getPendingRefresh()).toBe(newerRefresh)
+    releases[1]?.()
+    await newerRefresh
+  })
+
   it('keeps the access token out of web storage and cookies', async () => {
     issueTokens('secret-access-token')
 

@@ -22,10 +22,16 @@ export function AuthCompletePage() {
     let isCurrent = true
     void refreshSessionOutcome().then((outcome) => {
       if (!isCurrent) return
-      const isSignedIn =
-        outcome === 'refreshed' || (outcome === 'superseded' && getAuthStatus() === 'authenticated')
-      if (isSignedIn) void navigate({ to: '/', replace: true })
-      else setPhase(outcome === 'unavailable' ? 'unreachable' : 'failed')
+      if (outcome === 'superseded') {
+        // Another tab already replaced or closed the session: go to login without touching the dashboard.
+        void navigate({ to: '/login', replace: true })
+        return
+      }
+      if (outcome === 'refreshed' && getAuthStatus() === 'authenticated') {
+        void navigate({ to: '/', replace: true })
+        return
+      }
+      setPhase(outcome === 'unavailable' ? 'unreachable' : 'failed')
     })
     return () => {
       isCurrent = false

@@ -92,10 +92,13 @@ export function getPendingRefresh(): Promise<RefreshOutcome> | null {
 
 export function refreshSessionOutcome(): Promise<RefreshOutcome> {
   if (pendingRefresh === null && status === 'unavailable') setStatus('loading')
-  pendingRefresh ??= requestAccessToken().finally(() => {
-    pendingRefresh = null
+  if (pendingRefresh !== null) return pendingRefresh
+  const refresh = requestAccessToken().finally(() => {
+    // Logout may already have handed the slot to a newer refresh.
+    if (pendingRefresh === refresh) pendingRefresh = null
   })
-  return pendingRefresh
+  pendingRefresh = refresh
+  return refresh
 }
 
 export async function refreshSession(): Promise<boolean> {
@@ -109,6 +112,8 @@ export function signIn(token: string): void {
 
 export async function logout(): Promise<void> {
   sessionGeneration += 1
+  // The pending refresh belongs to the session being left; callers must not await its stale outcome.
+  pendingRefresh = null
   try {
     await sessionClient.POST('/api/v1/auth/logout', {
       params: { header: CSRF_HEADER },
