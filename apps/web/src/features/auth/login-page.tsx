@@ -37,6 +37,7 @@ const FAILURE_MESSAGES: Record<Exclude<Failure, 'unverified'>, string> = {
 export function LoginPage() {
   const status = useAuthStatus()
   const isJustVerified = useSearch({ strict: false, select: (search) => search.verified === true })
+  const isJustReset = useSearch({ strict: false, select: (search) => search.reset === true })
   const [failure, setFailure] = useState<Failure | null>(null)
   const [submittedEmail, setSubmittedEmail] = useState('')
   const { register, handleSubmit, resetField, setFocus, formState } = useForm<LoginValues>({
@@ -72,6 +73,11 @@ export function LoginPage() {
         {isJustVerified && failure === null && (
           <p role="status" className="rounded-xl border border-gain/35 bg-gain/10 px-3.5 py-3 text-sm leading-[1.45]">
             Tu email está verificado. Ya podés ingresar.
+          </p>
+        )}
+        {isJustReset && failure === null && (
+          <p role="status" className="rounded-xl border border-gain/35 bg-gain/10 px-3.5 py-3 text-sm leading-[1.45]">
+            Tu contraseña fue actualizada. Ingresá con la nueva.
           </p>
         )}
         {failure === 'unverified' ? (

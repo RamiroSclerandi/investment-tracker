@@ -67,3 +67,32 @@ export async function verifyEmail(body: Schemas['VerifyEmailRequest']): Promise<
     return 'unavailable'
   }
 }
+
+export type ForgotResult = 'accepted' | 'unavailable'
+
+export async function forgotPassword(email: string): Promise<ForgotResult> {
+  try {
+    const { response } = await withTimeout((signal) =>
+      apiClient.POST('/api/v1/auth/password/forgot', { body: { email }, signal }),
+    )
+    // The API answers the same 202 whether or not the account exists, so every other status is retryable.
+    return response.status === 202 ? 'accepted' : 'unavailable'
+  } catch {
+    return 'unavailable'
+  }
+}
+
+export type ResetPasswordResult = 'reset' | 'invalid' | 'unavailable'
+
+export async function resetPassword(body: Schemas['ResetPasswordRequest']): Promise<ResetPasswordResult> {
+  try {
+    const { response } = await withTimeout((signal) =>
+      apiClient.POST('/api/v1/auth/password/reset', { body, signal }),
+    )
+    if (response.status === 204) return 'reset'
+    if (response.status === 400) return 'invalid'
+    return 'unavailable'
+  } catch {
+    return 'unavailable'
+  }
+}

@@ -50,6 +50,15 @@ describe('/login', () => {
     expect(screen.queryByText('Tu email está verificado. Ya podés ingresar.')).not.toBeInTheDocument()
   })
 
+  it('shows an updated-password notice after a reset', async () => {
+    await renderApp('/login?reset=true')
+
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Tu contraseña fue actualizada. Ingresá con la nueva.',
+    )
+    expect(screen.queryByText('Tu email está verificado. Ya podés ingresar.')).not.toBeInTheDocument()
+  })
+
   it('validates the fields without calling the API', async () => {
     const bodies = answerLogin(() => problem(401, 'INVALID_CREDENTIALS'))
     await renderApp('/login')
