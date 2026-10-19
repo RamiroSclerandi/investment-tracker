@@ -1,0 +1,242 @@
+[
+  {
+    "fondo": "Pionero Renta Global - Clase A",
+    "horizonte": "medio",
+    "fecha": "2026-02-26",
+    "vcp": 198723.545,
+    "ccp": 11806806.88,
+    "patrimonio": 2346290520.67
+  },
+  {
+    "fondo": "Pionero Renta Global - Clase A",
+    "horizonte": "largo",
+    "fecha": "2020-02-11",
+    "vcp": 1000,
+    "ccp": 0,
+    "patrimonio": 0
+  },
+  {
+    "fondo": "Pionero Renta Global - Clase B",
+    "horizonte": "medio",
+    "fecha": "2026-02-26",
+    "vcp": 206782.991,
+    "ccp": 18298632.27,
+    "patrimonio": 3783845908.88
+  },
+  {
+    "fondo": "Pionero Renta Global - Clase B",
+    "horizonte": "largo",
+    "fecha": "2020-02-11",
+    "vcp": 1000,
+    "ccp": 0,
+    "patrimonio": 0
+  },
+  {
+    "fondo": "Pionero Renta Global - Clase C",
+    "horizonte": "medio",
+    "fecha": "2026-02-26",
+    "vcp": 795.472,
+    "ccp": 41619.76,
+    "patrimonio": 33107.34
+  },
+  {
+    "fondo": "Pionero Renta Global - Clase C",
+    "horizonte": "largo",
+    "fecha": "2020-02-11",
+    "vcp": 1000,
+    "ccp": 0,
+    "patrimonio": 0
+  },
+  {
+    "fondo": "1810 Ahorros Activos",
+    "horizonte": "medio",
+    "fecha": "2026-10-16",
+    "vcp": 31811.606,
+    "ccp": 3167719193,
+    "patrimonio": 100770234022.09
+  },
+  {
+    "fondo": "1810 Mas Ahorro",
+    "horizonte": "corto",
+    "fecha": "2026-10-16",
+    "vcp": 70549.17,
+    "ccp": 2552040413,
+    "patrimonio": 180044332156.96
+  },
+  {
+    "fondo": "1810 Mas Ahorro RP",
+    "horizonte": "corto",
+    "fecha": "2020-09-24",
+    "vcp": 3617.75,
+    "ccp": 104611378,
+    "patrimonio": 378457844.16
+  },
+  {
+    "fondo": "1810 Renta Dólar - Clase A",
+    "horizonte": "largo",
+    "fecha": "2026-10-16",
+    "vcp": 1028.505,
+    "ccp": 95085941,
+    "patrimonio": 97796333.42
+  },
+  {
+    "fondo": "1810 Renta Fija Argentina",
+    "horizonte": "medio",
+    "fecha": "2026-10-16",
+    "vcp": 80035.828,
+    "ccp": 233073234,
+    "patrimonio": 18654209172.44
+  },
+  {
+    "fondo": "1810 Renta Fija Argentina RP",
+    "horizonte": "medio",
+    "fecha": "2020-09-24",
+    "vcp": 1993.09,
+    "ccp": 1174592,
+    "patrimonio": 2341067.37
+  },
+  {
+    "fondo": "1822 Raices Ahorro Plus - Clase A",
+    "horizonte": "corto",
+    "fecha": "2026-10-16",
+    "vcp": 2004.769,
+    "ccp": 16430754656.63,
+    "patrimonio": 32939863534.49
+  },
+  {
+    "fondo": "1822 Raices Dólares Plus - Clase A",
+    "horizonte": "medio",
+    "fecha": "2026-10-16",
+    "vcp": 1294.818,
+    "ccp": 31209596.39,
+    "patrimonio": 40410742.84
+  },
+  {
+    "fondo": "1822 Raices Dolares Plus - Clase B Art. 11 Decreto 99/2019 y mod",
+    "horizonte": "medio",
+    "fecha": "2025-01-09",
+    "vcp": 833.272,
+    "ccp": 0,
+    "patrimonio": 0
+  },
+  {
+    "fondo": "1822 Raices Dólares Plus - Clase B Ley N° 27.743",
+    "horizonte": "medio",
+    "fecha": "2026-10-16",
+    "vcp": 1055.115,
+    "ccp": 100952.38,
+    "patrimonio": 106516.41
+  },
+  {
+    "fondo": "1822 Raices Gestion",
+    "horizonte": "medio",
+    "fecha": "2026-10-16",
+    "vcp": 17472.126,
+    "ccp": 699977990.78,
+    "patrimonio": 12230103848.8
+  },
+  {
+    "fondo": "1822 Raices Inversion",
+    "horizonte": "medio",
+    "fecha": "2026-10-16",
+    "vcp": 106386.936,
+    "ccp": 895625675.69,
+    "patrimonio": 95282871732.79
+  },
+  {
+    "fondo": "1822 Raices Renta en Dolares - Clase A",
+    "horizonte": "medio",
+    "fecha": "2026-10-16",
+    "vcp": 1031.809,
+    "ccp": 16152081.16,
+    "patrimonio": 16665854.94
+  },
+  {
+    "fondo": "1822 Raices Renta en Pesos",
+    "horizonte": "medio",
+    "fecha": "2026-10-16",
+    "vcp": 15408180.859,
+    "ccp": 5080651.27,
+    "patrimonio": 78283593703.61
+  },
+  {
+    "fondo": "1822 Raices Renta Fija Internacional - Clase A",
+    "horizonte": "medio",
+    "fecha": "2026-10-16",
+    "vcp": 997.846,
+    "ccp": 2324961.66,
+    "patrimonio": 2319954.75
+  },
+  {
+    "fondo": "1822 Raices Valores Fiduciarios",
+    "horizonte": "corto",
+    "fecha": "2026-10-16",
+    "vcp": 247741.86,
+    "ccp": 1125303447.81,
+    "patrimonio": 278784769329.33
+  },
+  {
+    "fondo": "ACA Valores Retorno Total - Clase A",
+    "horizonte": "medio",
+    "fecha": "2026-10-16",
+    "vcp": 1057.125,
+    "ccp": 157039926.65,
+    "patrimonio": 166010896.44
+  },
+  {
+    "fondo": "ACA Valores Retorno Total - Clase B",
+    "horizonte": "medio",
+    "fecha": "2026-10-16",
+    "vcp": 22562.665,
+    "ccp": 480844140.27,
+    "patrimonio": 10849125377.71
+  },
+  {
+    "fondo": "ACA Valores Retorno Total - Clase C",
+    "horizonte": "medio",
+    "fecha": "2026-10-16",
+    "vcp": 1186.206,
+    "ccp": 78061256684.1,
+    "patrimonio": 92596712915.12
+  },
+  {
+    "fondo": "Adcap ASB Multiactivo - Clase A",
+    "horizonte": "medio",
+    "fecha": "2026-10-16",
+    "vcp": 1193.836,
+    "ccp": 2061193547.28,
+    "patrimonio": 2460726580.35
+  },
+  {
+    "fondo": "Adcap ASB Multiactivo - Clase B",
+    "horizonte": "medio",
+    "fecha": "2026-10-16",
+    "vcp": 1203.707,
+    "ccp": 524442000.86,
+    "patrimonio": 631274614.52
+  },
+  {
+    "fondo": "Adcap ASB Multiactivo - Clase C",
+    "horizonte": "medio",
+    "fecha": "2026-10-16",
+    "vcp": 1262.504,
+    "ccp": 0,
+    "patrimonio": 0
+  },
+  {
+    "fondo": "Adcap ASB Multiactivo - Clase Ley Nº 27.743",
+    "horizonte": "medio",
+    "fecha": "2026-03-13",
+    "vcp": 1160.831,
+    "ccp": 0,
+    "patrimonio": 0
+  },
+  {
+    "fondo": "Adcap Balance Multiactivo  - Clase A",
+    "horizonte": "medio",
+    "fecha": "2026-10-16",
+    "vcp": 1840.602,
+    "ccp": 2123030065.97,
+    "patrimonio": 3907652433.6
+  }
+]

@@ -29,6 +29,7 @@ EXPECTED_PRIVILEGES = {
     "fx_rates": {"SELECT", "INSERT", "UPDATE", "DELETE"},
     "fx_rates_daily": {"SELECT", "INSERT", "UPDATE"},
     "job_runs": {"SELECT", "INSERT", "UPDATE"},
+    "market_holidays": {"SELECT", "INSERT", "UPDATE"},
 }
 APP_TABLES = tuple(EXPECTED_PRIVILEGES)
 TABLES_WITHOUT_DELETE = tuple(

@@ -36,6 +36,7 @@ from investment_tracker.core.logging import configure_logging
 from investment_tracker.core.rate_limit import register_rate_limiting
 from investment_tracker.core.request_id import RequestIdMiddleware
 from investment_tracker.core.settings import Settings, load_jwt_private_key
+from investment_tracker.market.providers.registry import build_registry, create_http_client
 from investment_tracker.ops.router import router as ops_router
 
 API_PREFIX = "/api/v1"
@@ -98,9 +99,13 @@ def create_app(
         engine = create_engine(settings)
         app.state.engine = engine
         app.state.sessionmaker = create_sessionmaker(engine)
+        http_client = create_http_client()
+        app.state.http_client = http_client
+        app.state.providers = build_registry(http_client)
         try:
             yield
         finally:
+            await http_client.aclose()
             await engine.dispose()
 
     docs_enabled = settings.environment != "production"
