@@ -101,7 +101,7 @@ def create_app(
         app.state.sessionmaker = create_sessionmaker(engine)
         http_client = create_http_client()
         app.state.http_client = http_client
-        app.state.providers = build_registry(http_client)
+        app.state.providers = build_registry(http_client, settings.coingecko_api_key)
         try:
             yield
         finally:

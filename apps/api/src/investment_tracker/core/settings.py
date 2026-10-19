@@ -43,6 +43,7 @@ class Settings(BaseSettings):
     gmail_refresh_token: SecretStr | None = None
     gmail_sender: EmailStr | None = None
     proxy_shared_secret: SecretStr | None = Field(default=None, min_length=32)
+    coingecko_api_key: SecretStr | None = None
 
     @field_validator(
         "gmail_client_id",

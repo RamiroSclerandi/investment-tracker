@@ -1,5 +1,6 @@
 import json
 import uuid
+from datetime import date
 
 import httpx
 import pytest
@@ -8,6 +9,7 @@ from cryptography.hazmat.primitives.serialization import Encoding, NoEncryption,
 from fastapi import FastAPI
 from pydantic import SecretStr
 
+from investment_tracker import main
 from investment_tracker.auth.jwt import AccessTokens
 from investment_tracker.core.email import SmtpEmailSender, UnconfiguredEmailSender
 from investment_tracker.core.gmail import GmailApiEmailSender
@@ -149,3 +151,32 @@ async def test_the_lifespan_builds_the_market_providers_on_one_http_client_and_c
         assert {providers.mep.name, providers.mep_fallback.name} == {"dolarapi", "data912"}
 
     assert client.is_closed
+
+
+async def test_the_lifespan_wires_the_price_providers_and_the_coingecko_demo_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    seen: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return httpx.Response(200, json={"prices": [[1789858800000, 81226.5]]})
+
+    monkeypatch.setattr(
+        main,
+        "create_http_client",
+        lambda: httpx.AsyncClient(transport=httpx.MockTransport(handler)),
+    )
+    settings = Settings(
+        database_url=SecretStr(DATABASE_URL),
+        coingecko_api_key=SecretStr("demo-key"),
+        _env_file=None,
+    )
+    app = create_app(settings)
+
+    async with app.router.lifespan_context(app):
+        providers = app.state.providers
+        assert (providers.crypto_live.name, providers.prices.name) == ("kraken", "data912")
+        await providers.crypto_history.history("bitcoin", date(2026, 10, 1), date(2026, 10, 2))
+
+    assert seen[0].headers["x-cg-demo-api-key"] == "demo-key"
