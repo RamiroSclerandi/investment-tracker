@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from investment_tracker.auth.dependencies import CurrentUserDep
 from investment_tracker.core.db import SessionDep
+from tests.integration.conftest import SUPABASE_ROLES
 
 pytestmark = pytest.mark.integration
 
@@ -22,7 +23,6 @@ EXPECTED_PRIVILEGES = {
     "refresh_tokens": {"SELECT", "INSERT", "UPDATE"},
     "oauth_accounts": {"SELECT", "INSERT"},
 }
-EXPOSED_ROLES = ("anon", "authenticated", "service_role")
 USER_ID_SETTING = text("SELECT current_setting('app.user_id', true)")
 
 
@@ -128,7 +128,7 @@ async def test_exposed_supabase_roles_and_public_have_no_access_to_the_app_schem
         exposed = (
             await connection.execute(
                 text("SELECT oid FROM pg_roles WHERE rolname = ANY(:names)"),
-                {"names": list(EXPOSED_ROLES)},
+                {"names": list(SUPABASE_ROLES)},
             )
         ).scalars()
         exposed_oids = set(exposed)
@@ -144,7 +144,7 @@ async def test_exposed_supabase_roles_and_public_have_no_access_to_the_app_schem
             ).scalars()
         )
 
-        assert len(exposed_oids) == len(EXPOSED_ROLES)
+        assert len(exposed_oids) == len(SUPABASE_ROLES)
         assert exposed_oids.isdisjoint(grantees)
         assert exposed_oids.isdisjoint(default_grantees)
         for oid in exposed_oids:

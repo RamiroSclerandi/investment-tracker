@@ -31,6 +31,7 @@ from investment_tracker.core.errors import problem_response
 from investment_tracker.core.rate_limit import (
     client_ip,
     client_ip_key,
+    forgot_client_email_limiter,
     forgot_email_limiter,
     handle_rate_limit_exceeded,
     limiter,
@@ -309,7 +310,11 @@ async def resend_verification(
 async def forgot_password(
     request: Request, body: ForgotPasswordRequest, background_tasks: BackgroundTasks
 ) -> AcceptedResponse:
-    if not forgot_email_limiter.allow(f"forgot:{body.email.lower()}"):
+    email = body.email.lower()
+    if not (
+        forgot_client_email_limiter.allow(f"forgot:{client_ip_key(request)}:{email}")
+        and forgot_email_limiter.allow(f"forgot:{email}")
+    ):
         # Dropped silently: a 429 or a delay here would reveal which addresses hit the cap.
         return AcceptedResponse()
     background_tasks.add_task(

@@ -6,6 +6,7 @@ import pytest
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from investment_tracker.core.rate_limit import limiter
 from tests.integration.conftest import WEB_BASE_URL, RecordingEmailSender
 from tests.integration.test_login import (
     CLIENT_IP,
@@ -135,12 +136,21 @@ async def test_forgot_is_limited_to_three_per_minute_per_client_ip(
     assert other_ip.status_code == 202
 
 
-async def test_forgot_issues_at_most_three_reset_links_per_hour_per_email(
+async def _forgot_after_the_ip_window(
+    client: httpx.AsyncClient, email: str, ip: str
+) -> httpx.Response:
+    # Clears only the per-minute IP limit, standing in for a later request within the hour.
+    limiter.reset()
+    return await _forgot(client, email, ip=ip)
+
+
+async def test_forgot_issues_at_most_three_reset_links_per_hour_per_email_and_ip(
     client: httpx.AsyncClient, engine: AsyncEngine, emails: RecordingEmailSender
 ) -> None:
     await _create_user(engine)
     responses = [
-        await _forgot(client, "ana@example.com", ip=f"203.0.113.{30 + index}") for index in range(4)
+        await _forgot_after_the_ip_window(client, "ana@example.com", "203.0.113.30")
+        for _ in range(4)
     ]
     for response in responses:
         assert response.status_code == 202
@@ -153,16 +163,39 @@ async def test_forgot_issues_at_most_three_reset_links_per_hour_per_email(
     assert fresh.status_code == 204
 
 
+async def test_forgot_from_another_ip_still_sends_after_one_ip_used_its_links(
+    client: httpx.AsyncClient, engine: AsyncEngine, emails: RecordingEmailSender
+) -> None:
+    await _create_user(engine)
+    for _ in range(3):
+        await _forgot_after_the_ip_window(client, "ana@example.com", "203.0.113.31")
+
+    response = await _forgot(client, "ana@example.com", ip="203.0.113.32")
+
+    assert response.status_code == 202
+    assert [message.to for message in emails.sent] == ["ana@example.com"] * 4
+
+
+async def test_forgot_issues_at_most_ten_reset_links_per_hour_per_email(
+    client: httpx.AsyncClient, engine: AsyncEngine, emails: RecordingEmailSender
+) -> None:
+    await _create_user(engine)
+    for index in range(11):
+        response = await _forgot(client, "ana@example.com", ip=f"203.0.113.{60 + index}")
+        assert response.status_code == 202
+
+    assert [message.to for message in emails.sent] == ["ana@example.com"] * 10
+
+
 async def test_forgot_per_email_cap_does_not_affect_other_emails(
     client: httpx.AsyncClient, engine: AsyncEngine, emails: RecordingEmailSender
 ) -> None:
     await _create_user(engine)
     await _create_user(engine, email="sofia@example.com")
-    for index in range(3):
-        response = await _forgot(client, "ana@example.com", ip=f"203.0.113.{40 + index}")
-        assert response.status_code == 202
+    for _ in range(3):
+        await _forgot_after_the_ip_window(client, "ana@example.com", "203.0.113.40")
 
-    response = await _forgot(client, "sofia@example.com", ip="203.0.113.44")
+    response = await _forgot_after_the_ip_window(client, "sofia@example.com", "203.0.113.40")
 
     assert response.status_code == 202
     assert [message.to for message in emails.sent] == ["ana@example.com"] * 3 + [
@@ -174,12 +207,12 @@ async def test_forgot_per_email_cap_ignores_case(
     client: httpx.AsyncClient, engine: AsyncEngine, emails: RecordingEmailSender
 ) -> None:
     await _create_user(engine)
-    for index in range(3):
-        assert (
-            await _forgot(client, "Ana@Example.com", ip=f"203.0.113.{50 + index}")
-        ).status_code == 202
+    for _ in range(3):
+        await _forgot_after_the_ip_window(client, "Ana@Example.com", "203.0.113.50")
 
-    assert (await _forgot(client, "ana@example.com", ip="203.0.113.54")).status_code == 202
+    response = await _forgot_after_the_ip_window(client, "ana@example.com", "203.0.113.50")
+
+    assert response.status_code == 202
     assert [message.to for message in emails.sent] == ["ana@example.com"] * 3
 
 
