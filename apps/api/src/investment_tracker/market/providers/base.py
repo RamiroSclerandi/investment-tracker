@@ -1,16 +1,26 @@
+import asyncio
 import enum
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta, timezone
 from decimal import Decimal
-from typing import Any, Protocol
+from typing import Annotated, Protocol
 
 import httpx
-from pydantic import TypeAdapter, ValidationError
+from pydantic import Field, StringConstraints, TypeAdapter, ValidationError
 
 from investment_tracker.auth.models import Currency
 
 ART = timezone(timedelta(hours=-3), "ART")
+MAX_RESPONSE_BYTES = 2 * 1024 * 1024
+MAX_ITEMS = 10_000
+MAX_DETAIL_LENGTH = 200
+REQUEST_DEADLINE_SECONDS = 20.0
+
+Amount = Annotated[Decimal, Field(gt=0, lt=Decimal("1E20"), max_digits=30, allow_inf_nan=False)]
+FxAmount = Annotated[Decimal, Field(gt=0, lt=Decimal("1E14"), max_digits=20, allow_inf_nan=False)]
+Text = Annotated[str, StringConstraints(max_length=200, pattern=r"^[^\x00-\x1f\x7f-\x9f]*$")]
+type Items[T] = Annotated[list[T], Field(max_length=MAX_ITEMS)]
 
 Clock = Callable[[], datetime]
 
@@ -72,8 +82,13 @@ class Holiday:
 
 class ProviderError(Exception):
     def __init__(self, provider: str, detail: str) -> None:
-        super().__init__(f"{provider}: {detail}")
+        super().__init__(f"{provider}: {detail[:MAX_DETAIL_LENGTH]}")
         self.provider = provider
+
+
+def check_spread(buy: Decimal, sell: Decimal) -> None:
+    if sell < buy:
+        raise ValueError("sell is below buy")
 
 
 class PriceProvider(Protocol):
@@ -94,13 +109,26 @@ async def get_json[T](
     client: httpx.AsyncClient, provider: str, url: str, shape: TypeAdapter[T]
 ) -> T:
     try:
-        response = await client.get(url)
+        # The httpx timeout is per read, so a trickling server needs an overall deadline.
+        async with asyncio.timeout(REQUEST_DEADLINE_SECONDS):
+            async with client.stream("GET", url) as response:
+                if response.status_code != httpx.codes.OK:
+                    raise ProviderError(provider, f"{url} answered HTTP {response.status_code}")
+                body = await _read_capped(response, provider, url)
+    except TimeoutError as exc:
+        raise ProviderError(provider, f"{url} missed the request deadline") from exc
     except httpx.HTTPError as exc:
         raise ProviderError(provider, f"request to {url} failed: {type(exc).__name__}") from exc
-    if response.status_code != httpx.codes.OK:
-        raise ProviderError(provider, f"{url} answered HTTP {response.status_code}")
     try:
-        payload: Any = response.json()
-        return shape.validate_python(payload)
-    except (ValueError, ValidationError) as exc:
+        return shape.validate_json(body)
+    except ValidationError as exc:
         raise ProviderError(provider, f"{url} returned an unexpected payload") from exc
+
+
+async def _read_capped(response: httpx.Response, provider: str, url: str) -> bytes:
+    body = bytearray()
+    async for chunk in response.aiter_bytes():
+        body.extend(chunk)
+        if len(body) > MAX_RESPONSE_BYTES:
+            raise ProviderError(provider, f"{url} response exceeds {MAX_RESPONSE_BYTES} bytes")
+    return bytes(body)

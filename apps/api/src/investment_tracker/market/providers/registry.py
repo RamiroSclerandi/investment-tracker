@@ -12,6 +12,7 @@ from investment_tracker.market.providers.data912 import Data912Mep
 from investment_tracker.market.providers.dolarapi import DolarApiMep
 
 PROVIDER_TIMEOUT = httpx.Timeout(10.0, connect=5.0)
+PROVIDER_LIMITS = httpx.Limits(max_connections=20, max_keepalive_connections=10)
 
 
 @dataclass(frozen=True)
@@ -24,7 +25,12 @@ class ProviderRegistry:
 
 
 def create_http_client() -> httpx.AsyncClient:
-    return httpx.AsyncClient(timeout=PROVIDER_TIMEOUT, headers={"User-Agent": "investment-tracker"})
+    return httpx.AsyncClient(
+        timeout=PROVIDER_TIMEOUT,
+        limits=PROVIDER_LIMITS,
+        follow_redirects=False,
+        headers={"User-Agent": "investment-tracker", "Accept-Encoding": "identity"},
+    )
 
 
 def build_registry(client: httpx.AsyncClient) -> ProviderRegistry:

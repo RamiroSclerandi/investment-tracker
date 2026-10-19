@@ -1,18 +1,30 @@
 from datetime import datetime
-from decimal import Decimal
+from typing import Self
 
 import httpx
-from pydantic import AwareDatetime, BaseModel, TypeAdapter
+from pydantic import AwareDatetime, BaseModel, TypeAdapter, model_validator
 
-from investment_tracker.market.providers.base import Clock, FxQuote, get_json, utc_now
+from investment_tracker.market.providers.base import (
+    Clock,
+    FxAmount,
+    FxQuote,
+    check_spread,
+    get_json,
+    utc_now,
+)
 
 BASE_URL = "https://dolarapi.com"
 
 
 class _Quote(BaseModel):
-    compra: Decimal
-    venta: Decimal
+    compra: FxAmount
+    venta: FxAmount
     fechaActualizacion: AwareDatetime  # noqa: N815
+
+    @model_validator(mode="after")
+    def sell_not_below_buy(self) -> Self:
+        check_spread(self.compra, self.venta)
+        return self
 
 
 _QUOTE = TypeAdapter(_Quote)
