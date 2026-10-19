@@ -15,14 +15,25 @@ from tests.integration.conftest import SUPABASE_ROLES
 
 pytestmark = pytest.mark.integration
 
-AUTH_TABLES = ("users", "email_tokens", "refresh_tokens", "oauth_accounts")
 TABLE_PRIVILEGES = ("SELECT", "INSERT", "UPDATE", "DELETE", "TRUNCATE", "REFERENCES", "TRIGGER")
 EXPECTED_PRIVILEGES = {
     "users": {"SELECT", "INSERT", "UPDATE"},
     "email_tokens": {"SELECT", "INSERT", "UPDATE"},
     "refresh_tokens": {"SELECT", "INSERT", "UPDATE"},
     "oauth_accounts": {"SELECT", "INSERT"},
+    "assets": {"SELECT", "INSERT", "UPDATE"},
+    "latest_prices": {"SELECT", "INSERT", "UPDATE"},
+    "asset_prices": {"SELECT", "INSERT", "UPDATE", "DELETE"},
+    "asset_prices_daily": {"SELECT", "INSERT", "UPDATE"},
+    "fx_latest": {"SELECT", "INSERT", "UPDATE"},
+    "fx_rates": {"SELECT", "INSERT", "UPDATE", "DELETE"},
+    "fx_rates_daily": {"SELECT", "INSERT", "UPDATE"},
+    "job_runs": {"SELECT", "INSERT", "UPDATE"},
 }
+APP_TABLES = tuple(EXPECTED_PRIVILEGES)
+TABLES_WITHOUT_DELETE = tuple(
+    table for table, privileges in EXPECTED_PRIVILEGES.items() if "DELETE" not in privileges
+)
 USER_ID_SETTING = text("SELECT current_setting('app.user_id', true)")
 
 
@@ -48,7 +59,7 @@ async def test_every_table_in_the_app_schema_has_row_level_security(engine: Asyn
         )
         tables: dict[str, bool] = dict(rows.tuples().all())
 
-    assert set(AUTH_TABLES) <= tables.keys()
+    assert set(APP_TABLES) <= tables.keys()
     assert [name for name, enabled in tables.items() if not enabled] == []
 
 
@@ -76,7 +87,7 @@ async def test_the_app_connects_as_a_non_owner_role_that_cannot_bypass_rls(
 
 async def test_app_rw_holds_only_the_table_privileges_the_code_uses(engine: AsyncEngine) -> None:
     granted: dict[str, set[str]] = {}
-    for table in AUTH_TABLES:
+    for table in APP_TABLES:
         granted[table] = {
             privilege
             for privilege in TABLE_PRIVILEGES
@@ -157,7 +168,7 @@ async def test_exposed_supabase_roles_and_public_have_no_access_to_the_app_schem
     assert public_oid not in grantees
 
 
-@pytest.mark.parametrize("table", AUTH_TABLES)
+@pytest.mark.parametrize("table", TABLES_WITHOUT_DELETE)
 async def test_app_rw_cannot_delete_rows(app_engine: AsyncEngine, table: str) -> None:
     with pytest.raises(ProgrammingError, match="permission denied"):
         async with app_engine.begin() as connection:
