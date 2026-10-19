@@ -181,3 +181,28 @@ async def test_a_job_run_starts_with_empty_counters_and_rejects_unknown_statuses
                     " VALUES ('tick', now(), 'RUNNING')"
                 )
             )
+
+
+async def test_a_market_holiday_is_upserted_by_date_and_rejects_unknown_kinds(
+    app_engine: AsyncEngine,
+) -> None:
+    day = datetime(2000, 1, 1, tzinfo=UTC).date() + timedelta(days=uuid.uuid4().int % 300_000)
+    upsert = text(
+        "INSERT INTO app.market_holidays (date, kind, name) VALUES (:date, :kind, :name)"
+        " ON CONFLICT (date) DO UPDATE SET kind = excluded.kind, name = excluded.name"
+    )
+
+    async with app_engine.begin() as connection:
+        await connection.execute(upsert, {"date": day, "kind": "trasladable", "name": "Old"})
+        await connection.execute(upsert, {"date": day, "kind": "puente", "name": "Bridge"})
+        row = (
+            await connection.execute(
+                text("SELECT kind::text, name FROM app.market_holidays WHERE date = :date"),
+                {"date": day},
+            )
+        ).one()
+
+    assert tuple(row) == ("puente", "Bridge")
+    with pytest.raises(DBAPIError, match="invalid input value for enum"):
+        async with app_engine.begin() as connection:
+            await connection.execute(upsert, {"date": day, "kind": "regional", "name": "X"})
