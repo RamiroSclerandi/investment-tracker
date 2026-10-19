@@ -229,6 +229,16 @@ describe('malformed or hung refreshes', () => {
     expect(modules.session.getAuthStatus()).toBe('unavailable')
   })
 
+  it('log only the error type when the refresh fails unexpectedly', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    answerRefreshWithHtml()
+
+    await modules.session.refreshSession()
+
+    expect(consoleError).toHaveBeenCalledExactlyOnceWith('auth_refresh_failed', 'SyntaxError')
+    consoleError.mockRestore()
+  })
+
   it('return the original 401 when the retry refresh answers with a non-JSON body', async () => {
     issueTokens('held-token')
     await modules.session.refreshSession()

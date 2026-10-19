@@ -67,8 +67,10 @@ async function fetchAccessToken(): Promise<string | null | undefined> {
     const { data, response } = await withRefreshLock(postRefresh)
     if (data) return data.access_token
     return response.status === 401 ? null : undefined
-  } catch {
+  } catch (error) {
     // Network errors, timeouts and unparseable bodies are all transient: none proves the session is gone.
+    // Only the type is logged: a message could carry the response body, token included.
+    console.error('auth_refresh_failed', error instanceof Error ? error.name : typeof error)
     return undefined
   }
 }
