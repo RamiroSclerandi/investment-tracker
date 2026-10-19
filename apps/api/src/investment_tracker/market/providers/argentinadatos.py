@@ -1,20 +1,25 @@
 from collections import Counter, defaultdict
 from collections.abc import Sequence
 from datetime import date
-from decimal import Decimal
+from typing import Self
 
 import httpx
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel, TypeAdapter, model_validator
 
 from investment_tracker.auth.models import Currency
 from investment_tracker.market.providers.base import (
+    Amount,
     Clock,
     DailyFxRate,
+    FxAmount,
     Holiday,
     HolidayKind,
+    Items,
     PricePoint,
     ProviderError,
+    Text,
     art_midnight,
+    check_spread,
     get_json,
     utc_now,
 )
@@ -28,24 +33,29 @@ SATURDAY = 5
 class _Holiday(BaseModel):
     fecha: date
     tipo: HolidayKind
-    nombre: str
+    nombre: Text
 
 
 class _DailyRate(BaseModel):
     fecha: date
-    compra: Decimal
-    venta: Decimal
+    compra: FxAmount
+    venta: FxAmount
+
+    @model_validator(mode="after")
+    def sell_not_below_buy(self) -> Self:
+        check_spread(self.compra, self.venta)
+        return self
 
 
 class _Fund(BaseModel):
-    fondo: str
+    fondo: Text
     fecha: date
-    vcp: Decimal
+    vcp: Amount
 
 
-_HOLIDAYS = TypeAdapter(list[_Holiday])
-_DAILY_RATES = TypeAdapter(list[_DailyRate])
-_FUNDS = TypeAdapter(list[_Fund])
+_HOLIDAYS = TypeAdapter(Items[_Holiday])
+_DAILY_RATES = TypeAdapter(Items[_DailyRate])
+_FUNDS = TypeAdapter(Items[_Fund])
 
 
 class ArgentinaDatosHolidays:
@@ -87,7 +97,7 @@ class ArgentinaDatosFci:
         for ref in refs:
             category, _, fund = ref.partition("/")
             if category not in FCI_CATEGORIES:
-                raise ProviderError(NAME, f"unknown FCI category {category!r} in {ref!r}")
+                raise ProviderError(NAME, f"unknown FCI category {category[:40]!r}")
             by_category[category].add(fund)
         points: dict[str, PricePoint] = {}
         for category, funds in by_category.items():
