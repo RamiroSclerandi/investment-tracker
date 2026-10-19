@@ -1,0 +1,3832 @@
+[[assets]]
+type = "CEDEAR"
+symbol = "AAPL"
+name = "Apple Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/AAPL"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "ABBV"
+name = "AbbVie Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/ABBV"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "ABT"
+name = "Abbott Laboratories"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/ABT"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "ACN"
+name = "Accenture PLC"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/ACN"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "ADI"
+name = "Analog Devices Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/ADI"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "ADP"
+name = "Automatic Data Processing Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/ADP"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "AIG"
+name = "American International Group Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/AIG"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "AMAT"
+name = "Applied Materials Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/AMAT"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "AMD"
+name = "Advanced Micro Devices Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/AMD"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "AMGN"
+name = "Amgen Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/AMGN"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "AMZN"
+name = "Amazon.com Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/AMZN"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "ASML"
+name = "ASML Holding NV"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/ASML"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "AVGO"
+name = "Broadcom Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/AVGO"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "AXP"
+name = "American Express Co"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/AXP"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "AZN"
+name = "AstraZeneca PLC"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/AZN"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "BA"
+name = "Boeing Co"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/BA"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "BABA"
+name = "Alibaba Group Holding Ltd"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/BABA"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "BAC"
+name = "Bank of America Corp"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/BAC"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "BBV"
+name = "Banco Bilbao Vizcaya Argentaria SA"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/BBV"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "BCS"
+name = "Barclays PLC"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/BCS"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "BHP"
+name = "BHP Group Ltd"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/BHP"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "BIDU"
+name = "Baidu Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/BIDU"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "BKNG"
+name = "Booking Holdings Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/BKNG"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "BKR"
+name = "Baker Hughes Co"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/BKR"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "BMY"
+name = "Bristol-Myers Squibb Co"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/BMY"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "BP"
+name = "BP PLC"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/BP"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "BRKB"
+name = "Berkshire Hathaway Inc Class B"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/BRKB"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "C"
+name = "Citigroup Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/C"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "CAT"
+name = "Caterpillar Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/CAT"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "CL"
+name = "Colgate-Palmolive Co"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/CL"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "COP"
+name = "ConocoPhillips"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/COP"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "COST"
+name = "Costco Wholesale Corp"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/COST"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "CRM"
+name = "Salesforce Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/CRM"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "CSCO"
+name = "Cisco Systems Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/CSCO"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "CVX"
+name = "Chevron Corp"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/CVX"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "DE"
+name = "Deere & Co"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/DE"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "DHR"
+name = "Danaher Corp"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/DHR"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "E"
+name = "Eni SpA"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/E"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "EBAY"
+name = "eBay Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/EBAY"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "F"
+name = "Ford Motor Co"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/F"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "FCX"
+name = "Freeport-McMoRan Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/FCX"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "FDX"
+name = "FedEx Corp"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/FDX"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "GE"
+name = "General Electric Co"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/GE"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "GILD"
+name = "Gilead Sciences Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/GILD"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "GLW"
+name = "Corning Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/GLW"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "GM"
+name = "General Motors Co"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/GM"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "GOOGL"
+name = "Alphabet Inc Class A"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/GOOGL"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "GS"
+name = "Goldman Sachs Group Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/GS"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "GSK"
+name = "GSK PLC"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/GSK"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "HAL"
+name = "Halliburton Co"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/HAL"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "HD"
+name = "Home Depot Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/HD"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "HMC"
+name = "Honda Motor Co Ltd"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/HMC"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "HON"
+name = "Honeywell International Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/HON"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "HPQ"
+name = "HP Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/HPQ"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "HSBC"
+name = "HSBC Holdings PLC"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/HSBC"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "IBM"
+name = "IBM Corp"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/IBM"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "ING"
+name = "ING Groep NV"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/ING"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "ISRG"
+name = "Intuitive Surgical Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/ISRG"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "JD"
+name = "JD.com Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/JD"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "JNJ"
+name = "Johnson & Johnson"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/JNJ"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "JPM"
+name = "JPMorgan Chase & Co"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/JPM"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "KLAC"
+name = "KLA Corp"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/KLAC"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "KMB"
+name = "Kimberly-Clark Corp"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/KMB"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "KO"
+name = "Coca-Cola Co"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/KO"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "LIN"
+name = "Linde PLC"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/LIN"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "LLY"
+name = "Eli Lilly and Co"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/LLY"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "LRCX"
+name = "Lam Research Corp"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/LRCX"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "MA"
+name = "Mastercard Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/MA"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "MCD"
+name = "McDonald's Corp"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/MCD"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "MDLZ"
+name = "Mondelez International Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/MDLZ"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "MDT"
+name = "Medtronic PLC"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/MDT"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "META"
+name = "Meta Platforms Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/META"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "MFG"
+name = "Mizuho Financial Group Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/MFG"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "MRK"
+name = "Merck & Co Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/MRK"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "MRVL"
+name = "Marvell Technology Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/MRVL"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "MS"
+name = "Morgan Stanley"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/MS"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "MSFT"
+name = "Microsoft Corp"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/MSFT"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "MU"
+name = "Micron Technology Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/MU"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "MUFG"
+name = "Mitsubishi UFJ Financial Group Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/MUFG"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "NFLX"
+name = "Netflix Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/NFLX"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "NKE"
+name = "Nike Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/NKE"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "NOW"
+name = "ServiceNow Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/NOW"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "NTES"
+name = "NetEase Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/NTES"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "NVDA"
+name = "Nvidia Corp"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/NVDA"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "NVO"
+name = "Novo Nordisk A/S"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/NVO"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "NVS"
+name = "Novartis AG"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/NVS"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "OXY"
+name = "Occidental Petroleum Corp"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/OXY"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "PANW"
+name = "Palo Alto Networks Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/PANW"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "PEP"
+name = "PepsiCo Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/PEP"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "PFE"
+name = "Pfizer Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/PFE"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "PG"
+name = "Procter & Gamble Co"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/PG"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "PLD"
+name = "Prologis Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/PLD"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "PM"
+name = "Philip Morris International Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/PM"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "PSX"
+name = "Phillips 66"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/PSX"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "QCOM"
+name = "Qualcomm Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/QCOM"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "RACE"
+name = "Ferrari NV"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/RACE"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "RIO"
+name = "Rio Tinto PLC"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/RIO"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "RTX"
+name = "Raytheon Technologies RTX Corp"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/RTX"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "SAN"
+name = "Banco Santander SA"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/SAN"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "SAP"
+name = "SAP SE"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/SAP"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "SBUX"
+name = "Starbucks Corp"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/SBUX"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "SHEL"
+name = "Shell PLC"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/SHEL"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "SIEGY"
+name = "Siemens AG"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/SIEGY"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "SLB"
+name = "Schlumberger NV"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/SLB"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "SONY"
+name = "Sony Group Corp"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/SONY"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "SPGI"
+name = "S&P Global Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/SPGI"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "STLA"
+name = "Stellantis NV"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/STLA"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "TGT"
+name = "Target Corp"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/TGT"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "TJX"
+name = "TJX Companies Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/TJX"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "TM"
+name = "Toyota Motor Corp"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/TM"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "TMO"
+name = "Thermo Fisher Scientific Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/TMO"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "TMUS"
+name = "T-Mobile US Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/TMUS"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "TSLA"
+name = "Tesla Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/TSLA"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "TTE"
+name = "TotalEnergies SE"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/TTE"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "TXN"
+name = "Texas Instruments Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/TXN"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "UBER"
+name = "Uber Technologies Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/UBER"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "UL"
+name = "Unilever PLC"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/UL"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "UNH"
+name = "UnitedHealth Group Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/UNH"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "UNP"
+name = "Union Pacific Corp"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/UNP"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "V"
+name = "Visa Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/V"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "VRTX"
+name = "Vertex Pharmaceuticals Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/VRTX"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "VZ"
+name = "Verizon Communications Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/VZ"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "WFC"
+name = "Wells Fargo & Co"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/WFC"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "WMT"
+name = "Walmart Inc"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/WMT"
+
+[[assets]]
+type = "CEDEAR"
+symbol = "XOM"
+name = "Exxon Mobil Corp"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_cedears/XOM"
+
+[[assets]]
+type = "CORP_BONDS"
+symbol = "IRCFD"
+name = "IRSA Clase 14 2028 USD MEP"
+quote_currency = "USD"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_corp/IRCFD"
+
+[[assets]]
+type = "CORP_BONDS"
+symbol = "IRCFO"
+name = "IRSA Clase 14 2028"
+quote_currency = "ARS"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_corp/IRCFO"
+
+[[assets]]
+type = "CORP_BONDS"
+symbol = "MGCED"
+name = "Pampa Energía Clase 14 2027 USD MEP"
+quote_currency = "USD"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_corp/MGCED"
+
+[[assets]]
+type = "CORP_BONDS"
+symbol = "MGCEO"
+name = "Pampa Energía Clase 14 2027"
+quote_currency = "ARS"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_corp/MGCEO"
+
+[[assets]]
+type = "CORP_BONDS"
+symbol = "PNDCD"
+name = "Pan American Energy Clase 14 2027 USD MEP"
+quote_currency = "USD"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_corp/PNDCD"
+
+[[assets]]
+type = "CORP_BONDS"
+symbol = "PNDCO"
+name = "Pan American Energy Clase 14 2027"
+quote_currency = "ARS"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_corp/PNDCO"
+
+[[assets]]
+type = "CORP_BONDS"
+symbol = "TSC3D"
+name = "Transportadora de Gas del Sur Clase 3 2031 USD MEP"
+quote_currency = "USD"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_corp/TSC3D"
+
+[[assets]]
+type = "CORP_BONDS"
+symbol = "TSC3O"
+name = "Transportadora de Gas del Sur Clase 3 2031"
+quote_currency = "ARS"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_corp/TSC3O"
+
+[[assets]]
+type = "CORP_BONDS"
+symbol = "YMCID"
+name = "YPF Clase XXI 2029 USD MEP"
+quote_currency = "USD"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_corp/YMCID"
+
+[[assets]]
+type = "CORP_BONDS"
+symbol = "YMCIO"
+name = "YPF Clase XXI 2029"
+quote_currency = "ARS"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_corp/YMCIO"
+
+[[assets]]
+type = "CRYPTO"
+symbol = "ADA"
+name = "Cardano"
+quote_currency = "USD"
+provider = "coingecko"
+provider_ref = "cardano"
+live_provider = "kraken"
+
+[[assets]]
+type = "CRYPTO"
+symbol = "APT"
+name = "Aptos"
+quote_currency = "USD"
+provider = "coingecko"
+provider_ref = "aptos"
+live_provider = "kraken"
+
+[[assets]]
+type = "CRYPTO"
+symbol = "ATOM"
+name = "Cosmos"
+quote_currency = "USD"
+provider = "coingecko"
+provider_ref = "cosmos"
+live_provider = "kraken"
+
+[[assets]]
+type = "CRYPTO"
+symbol = "AVAX"
+name = "Avalanche"
+quote_currency = "USD"
+provider = "coingecko"
+provider_ref = "avalanche-2"
+live_provider = "kraken"
+
+[[assets]]
+type = "CRYPTO"
+symbol = "BNB"
+name = "BNB"
+quote_currency = "USD"
+provider = "coingecko"
+provider_ref = "binancecoin"
+live_provider = "kraken"
+
+[[assets]]
+type = "CRYPTO"
+symbol = "BTC"
+name = "Bitcoin"
+quote_currency = "USD"
+provider = "coingecko"
+provider_ref = "bitcoin"
+live_provider = "kraken"
+
+[[assets]]
+type = "CRYPTO"
+symbol = "DOGE"
+name = "Dogecoin"
+quote_currency = "USD"
+provider = "coingecko"
+provider_ref = "dogecoin"
+live_provider = "kraken"
+
+[[assets]]
+type = "CRYPTO"
+symbol = "DOT"
+name = "Polkadot"
+quote_currency = "USD"
+provider = "coingecko"
+provider_ref = "polkadot"
+live_provider = "kraken"
+
+[[assets]]
+type = "CRYPTO"
+symbol = "ETH"
+name = "Ethereum"
+quote_currency = "USD"
+provider = "coingecko"
+provider_ref = "ethereum"
+live_provider = "kraken"
+
+[[assets]]
+type = "CRYPTO"
+symbol = "FET"
+name = "Fetch.ai"
+quote_currency = "USD"
+provider = "coingecko"
+provider_ref = "fetch-ai"
+live_provider = "kraken"
+
+[[assets]]
+type = "CRYPTO"
+symbol = "ICP"
+name = "Internet Computer"
+quote_currency = "USD"
+provider = "coingecko"
+provider_ref = "internet-computer"
+live_provider = "kraken"
+
+[[assets]]
+type = "CRYPTO"
+symbol = "KAS"
+name = "Kaspa"
+quote_currency = "USD"
+provider = "coingecko"
+provider_ref = "kaspa"
+live_provider = "kraken"
+
+[[assets]]
+type = "CRYPTO"
+symbol = "LINK"
+name = "Chainlink"
+quote_currency = "USD"
+provider = "coingecko"
+provider_ref = "chainlink"
+live_provider = "kraken"
+
+[[assets]]
+type = "CRYPTO"
+symbol = "LTC"
+name = "Litecoin"
+quote_currency = "USD"
+provider = "coingecko"
+provider_ref = "litecoin"
+live_provider = "kraken"
+
+[[assets]]
+type = "CRYPTO"
+symbol = "NEAR"
+name = "Near Protocol"
+quote_currency = "USD"
+provider = "coingecko"
+provider_ref = "near"
+live_provider = "kraken"
+
+[[assets]]
+type = "CRYPTO"
+symbol = "POL"
+name = "Polygon"
+quote_currency = "USD"
+provider = "coingecko"
+provider_ref = "polygon-ecosystem-token"
+live_provider = "kraken"
+
+[[assets]]
+type = "CRYPTO"
+symbol = "RENDER"
+name = "Render"
+quote_currency = "USD"
+provider = "coingecko"
+provider_ref = "render-token"
+live_provider = "kraken"
+
+[[assets]]
+type = "CRYPTO"
+symbol = "SOL"
+name = "Solana"
+quote_currency = "USD"
+provider = "coingecko"
+provider_ref = "solana"
+live_provider = "kraken"
+
+[[assets]]
+type = "CRYPTO"
+symbol = "SUI"
+name = "Sui"
+quote_currency = "USD"
+provider = "coingecko"
+provider_ref = "sui"
+live_provider = "kraken"
+
+[[assets]]
+type = "CRYPTO"
+symbol = "TAO"
+name = "Bittensor"
+quote_currency = "USD"
+provider = "coingecko"
+provider_ref = "bittensor"
+live_provider = "kraken"
+
+[[assets]]
+type = "CRYPTO"
+symbol = "TRX"
+name = "TRON"
+quote_currency = "USD"
+provider = "coingecko"
+provider_ref = "tron"
+live_provider = "kraken"
+
+[[assets]]
+type = "CRYPTO"
+symbol = "UNI"
+name = "Uniswap"
+quote_currency = "USD"
+provider = "coingecko"
+provider_ref = "uniswap"
+live_provider = "kraken"
+
+[[assets]]
+type = "CRYPTO"
+symbol = "XLM"
+name = "Stellar"
+quote_currency = "USD"
+provider = "coingecko"
+provider_ref = "stellar"
+live_provider = "kraken"
+
+[[assets]]
+type = "CRYPTO"
+symbol = "XMR"
+name = "Monero"
+quote_currency = "USD"
+provider = "coingecko"
+provider_ref = "monero"
+live_provider = "kraken"
+
+[[assets]]
+type = "CRYPTO"
+symbol = "XRP"
+name = "Ripple"
+quote_currency = "USD"
+provider = "coingecko"
+provider_ref = "ripple"
+live_provider = "kraken"
+
+[[assets]]
+type = "FIXED_RATE_AR"
+symbol = "T15E7"
+name = "Boncap Vto Enero 2027"
+quote_currency = "ARS"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/T15E7"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "AE38"
+name = "Bonar 2038 USD"
+quote_currency = "ARS"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/AE38"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "AE38C"
+name = "Bonar 2038 USD Cable"
+quote_currency = "USD"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/AE38C"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "AE38D"
+name = "Bonar 2038 USD MEP"
+quote_currency = "USD"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/AE38D"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "AL29"
+name = "Bonar 2029 USD"
+quote_currency = "ARS"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/AL29"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "AL29C"
+name = "Bonar 2029 USD Cable"
+quote_currency = "USD"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/AL29C"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "AL29D"
+name = "Bonar 2029 USD MEP"
+quote_currency = "USD"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/AL29D"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "AL30"
+name = "Bonar 2030 USD"
+quote_currency = "ARS"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/AL30"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "AL30C"
+name = "Bonar 2030 USD Cable"
+quote_currency = "USD"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/AL30C"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "AL30D"
+name = "Bonar 2030 USD MEP"
+quote_currency = "USD"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/AL30D"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "AL35"
+name = "Bonar 2035 USD"
+quote_currency = "ARS"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/AL35"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "AL35C"
+name = "Bonar 2035 USD Cable"
+quote_currency = "USD"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/AL35C"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "AL35D"
+name = "Bonar 2035 USD MEP"
+quote_currency = "USD"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/AL35D"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "AL41"
+name = "Bonar 2041 USD"
+quote_currency = "ARS"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/AL41"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "AL41C"
+name = "Bonar 2041 USD Cable"
+quote_currency = "USD"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/AL41C"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "AL41D"
+name = "Bonar 2041 USD MEP"
+quote_currency = "USD"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/AL41D"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "BPOA7"
+name = "BOPREAL Serie 1 Tramo A"
+quote_currency = "ARS"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/BPOA7"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "BPOB7"
+name = "BOPREAL Serie 1 Tramo B"
+quote_currency = "ARS"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/BPOB7"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "BPOC7"
+name = "BOPREAL Serie 1 Tramo C"
+quote_currency = "ARS"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/BPOC7"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "BPOD7"
+name = "BOPREAL Serie 1 Tramo D"
+quote_currency = "ARS"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/BPOD7"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "CUAP"
+name = "Boncer Cuasipar Vto 2032"
+quote_currency = "ARS"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/CUAP"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "DICP"
+name = "Boncer Descuento Vto 2033"
+quote_currency = "ARS"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/DICP"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "GD29"
+name = "Global 2029 USD"
+quote_currency = "ARS"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/GD29"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "GD29C"
+name = "Global 2029 USD Cable"
+quote_currency = "USD"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/GD29C"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "GD29D"
+name = "Global 2029 USD MEP"
+quote_currency = "USD"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/GD29D"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "GD30"
+name = "Global 2030 USD"
+quote_currency = "ARS"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/GD30"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "GD30C"
+name = "Global 2030 USD Cable"
+quote_currency = "USD"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/GD30C"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "GD30D"
+name = "Global 2030 USD MEP"
+quote_currency = "USD"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/GD30D"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "GD35"
+name = "Global 2035 USD"
+quote_currency = "ARS"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/GD35"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "GD35C"
+name = "Global 2035 USD Cable"
+quote_currency = "USD"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/GD35C"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "GD35D"
+name = "Global 2035 USD MEP"
+quote_currency = "USD"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/GD35D"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "GD38"
+name = "Global 2038 USD"
+quote_currency = "ARS"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/GD38"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "GD38C"
+name = "Global 2038 USD Cable"
+quote_currency = "USD"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/GD38C"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "GD38D"
+name = "Global 2038 USD MEP"
+quote_currency = "USD"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/GD38D"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "GD41"
+name = "Global 2041 USD"
+quote_currency = "ARS"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/GD41"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "GD41C"
+name = "Global 2041 USD Cable"
+quote_currency = "USD"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/GD41C"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "GD41D"
+name = "Global 2041 USD MEP"
+quote_currency = "USD"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/GD41D"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "GD46"
+name = "Global 2046 USD"
+quote_currency = "ARS"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/GD46"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "GD46C"
+name = "Global 2046 USD Cable"
+quote_currency = "USD"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/GD46C"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "GD46D"
+name = "Global 2046 USD MEP"
+quote_currency = "USD"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/GD46D"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "PARP"
+name = "Boncer Par Vto 2038"
+quote_currency = "ARS"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/PARP"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "TX26"
+name = "Boncer Vto Noviembre 2026"
+quote_currency = "ARS"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/TX26"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "TX28"
+name = "Boncer Vto Noviembre 2028"
+quote_currency = "ARS"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/TX28"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "TZXD6"
+name = "Boncer Vto Diciembre 2026"
+quote_currency = "ARS"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/TZXD6"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "TZXD8"
+name = "Boncer Vto Diciembre 2028"
+quote_currency = "ARS"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/TZXD8"
+
+[[assets]]
+type = "SOV_BONDS"
+symbol = "TZXM7"
+name = "Boncer Vto Junio 2027"
+quote_currency = "ARS"
+price_factor = "0.01"
+provider = "data912"
+provider_ref = "arg_bonds/TZXM7"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "AGRO"
+name = "Agrometal"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/AGRO"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "ALUA"
+name = "Aluar Aluminio Argentino"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/ALUA"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "AUSO"
+name = "Autopistas del Sol"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/AUSO"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "BBAR"
+name = "Banco BBVA Argentina"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/BBAR"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "BHIP"
+name = "Banco Hipotecario"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/BHIP"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "BMA"
+name = "Banco Macro"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/BMA"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "BOLT"
+name = "Boldt"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/BOLT"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "BYMA"
+name = "Bolsas y Mercados Argentinos"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/BYMA"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "CADO"
+name = "Carlos Casado"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/CADO"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "CARC"
+name = "Carboclor"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/CARC"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "CELU"
+name = "Celulosa Argentina"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/CELU"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "CEPU"
+name = "Central Puerto"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/CEPU"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "CGPA2"
+name = "Camuzzi Gas Pampeana"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/CGPA2"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "COME"
+name = "Sociedad Comercial del Plata"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/COME"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "CRES"
+name = "Cresud"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/CRES"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "ECOG"
+name = "Distribuidora de Gas Cuyana"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/ECOG"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "EDN"
+name = "Edenor"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/EDN"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "FERR"
+name = "Ferrum"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/FERR"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "GARO"
+name = "Garovaglio y Zorraquín"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/GARO"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "GCLA"
+name = "Grupo Clarín"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/GCLA"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "GGAL"
+name = "Grupo Financiero Galicia"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/GGAL"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "GRIM"
+name = "Grimoldi"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/GRIM"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "HARG"
+name = "Holcim Argentina"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/HARG"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "HAVA"
+name = "Havanna Holding"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/HAVA"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "IRSA"
+name = "IRSA"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/IRSA"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "LEDE"
+name = "Ledesma"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/LEDE"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "LOMA"
+name = "Loma Negra"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/LOMA"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "METR"
+name = "Metrogas"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/METR"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "MIRG"
+name = "Mirgor"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/MIRG"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "MOLA"
+name = "Molinos Agro"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/MOLA"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "MOLI"
+name = "Molinos Río de la Plata"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/MOLI"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "MORI"
+name = "Morixe Hermanos"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/MORI"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "OEST"
+name = "Grupo Concesionario del Oeste"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/OEST"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "PAMP"
+name = "Pampa Energía"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/PAMP"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "POLL"
+name = "Polledo"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/POLL"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "RICH"
+name = "Laboratorios Richmond"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/RICH"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "RIGO"
+name = "Rigolleau"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/RIGO"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "ROSE"
+name = "Instituto Rosenbusch"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/ROSE"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "SAMI"
+name = "San Miguel"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/SAMI"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "SEMI"
+name = "Semino"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/SEMI"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "SUPV"
+name = "Grupo Supervielle"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/SUPV"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "TECO2"
+name = "Telecom Argentina"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/TECO2"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "TGNO4"
+name = "Transportadora de Gas del Norte"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/TGNO4"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "TGSU2"
+name = "Transportadora de Gas del Sur"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/TGSU2"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "TRAN"
+name = "Transener"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/TRAN"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "TXAR"
+name = "Ternium Argentina"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/TXAR"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "VALO"
+name = "Banco de Valores"
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/VALO"
+
+[[assets]]
+type = "STOCK_AR"
+symbol = "YPFD"
+name = "YPF S.A."
+quote_currency = "ARS"
+provider = "data912"
+provider_ref = "arg_stocks/YPFD"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "A"
+name = "Agilent Technologies Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/A"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "AAPL"
+name = "Apple Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/AAPL"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "ABBV"
+name = "AbbVie Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/ABBV"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "ABT"
+name = "Abbott Laboratories"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/ABT"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "ACGL"
+name = "Arch Capital Group Ltd"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/ACGL"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "ACN"
+name = "Accenture PLC"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/ACN"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "ADI"
+name = "Analog Devices Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/ADI"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "ADM"
+name = "Archer-Daniels-Midland Co"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/ADM"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "ADP"
+name = "Automatic Data Processing Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/ADP"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "AEE"
+name = "Ameren Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/AEE"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "AEP"
+name = "American Electric Power Co Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/AEP"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "AFL"
+name = "AFLAC Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/AFL"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "AIG"
+name = "American International Group Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/AIG"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "AJG"
+name = "Arthur J. Gallagher & Co"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/AJG"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "ALL"
+name = "Allstate Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/ALL"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "AMAT"
+name = "Applied Materials Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/AMAT"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "AMD"
+name = "Advanced Micro Devices Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/AMD"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "AME"
+name = "AMETEK Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/AME"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "AMGN"
+name = "Amgen Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/AMGN"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "AMP"
+name = "Ameriprise Financial Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/AMP"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "AMZN"
+name = "Amazon.com Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/AMZN"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "AON"
+name = "Aon PLC"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/AON"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "APD"
+name = "Air Products and Chemicals Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/APD"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "APH"
+name = "Amphenol Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/APH"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "AVGO"
+name = "Broadcom Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/AVGO"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "AXP"
+name = "American Express Co"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/AXP"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "AZO"
+name = "AutoZone Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/AZO"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "BA"
+name = "Boeing Co"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/BA"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "BAC"
+name = "Bank of America Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/BAC"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "BDX"
+name = "Becton Dickinson and Co"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/BDX"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "BKNG"
+name = "Booking Holdings Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/BKNG"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "BKR"
+name = "Baker Hughes Co"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/BKR"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "BLK"
+name = "BlackRock Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/BLK"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "BMY"
+name = "Bristol-Myers Squibb Co"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/BMY"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "BRK.B"
+name = "Berkshire Hathaway Inc Class B"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/BRK.B"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "BSX"
+name = "Boston Scientific Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/BSX"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "C"
+name = "Citigroup Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/C"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "CARR"
+name = "Carrier Global Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/CARR"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "CAT"
+name = "Caterpillar Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/CAT"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "CB"
+name = "Chubb Ltd"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/CB"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "CBRE"
+name = "CBRE Group Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/CBRE"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "CCI"
+name = "Crown Castle Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/CCI"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "CDNS"
+name = "Cadence Design Systems Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/CDNS"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "CEG"
+name = "Constellation Energy Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/CEG"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "CHTR"
+name = "Charter Communications Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/CHTR"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "CL"
+name = "Colgate-Palmolive Co"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/CL"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "CMCSA"
+name = "Comcast Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/CMCSA"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "CME"
+name = "CME Group Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/CME"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "CMG"
+name = "Chipotle Mexican Grill Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/CMG"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "CMI"
+name = "Cummins Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/CMI"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "CNC"
+name = "Centene Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/CNC"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "COP"
+name = "ConocoPhillips"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/COP"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "COST"
+name = "Costco Wholesale Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/COST"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "CRM"
+name = "Salesforce Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/CRM"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "CSCO"
+name = "Cisco Systems Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/CSCO"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "CSGP"
+name = "CoStar Group Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/CSGP"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "CSX"
+name = "CSX Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/CSX"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "CTAS"
+name = "Cintas Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/CTAS"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "CTSH"
+name = "Cognizant Technology Solutions Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/CTSH"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "CTVA"
+name = "Corteva Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/CTVA"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "CVX"
+name = "Chevron Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/CVX"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "D"
+name = "Dominion Energy Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/D"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "DE"
+name = "Deere & Co"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/DE"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "DG"
+name = "Dollar General Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/DG"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "DHR"
+name = "Danaher Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/DHR"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "DLR"
+name = "Digital Realty Trust Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/DLR"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "DLTR"
+name = "Dollar Tree Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/DLTR"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "DTE"
+name = "DTE Energy Co"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/DTE"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "DUK"
+name = "Duke Energy Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/DUK"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "DXCM"
+name = "DexCom Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/DXCM"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "EBAY"
+name = "eBay Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/EBAY"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "ECL"
+name = "Ecolab Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/ECL"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "ED"
+name = "Consolidated Edison Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/ED"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "ELV"
+name = "Elevance Health Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/ELV"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "EMR"
+name = "Emerson Electric Co"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/EMR"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "EOG"
+name = "EOG Resources Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/EOG"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "EQIX"
+name = "Equinix Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/EQIX"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "ES"
+name = "Eversource Energy"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/ES"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "ETN"
+name = "Eaton Corporation PLC"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/ETN"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "EW"
+name = "Edwards Lifesciences Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/EW"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "EXC"
+name = "Exelon Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/EXC"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "F"
+name = "Ford Motor Co"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/F"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "FANG"
+name = "Diamondback Energy Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/FANG"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "FAST"
+name = "Fastenal Co"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/FAST"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "FCX"
+name = "Freeport-McMoRan Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/FCX"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "FDX"
+name = "FedEx Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/FDX"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "FTNT"
+name = "Fortinet Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/FTNT"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "GD"
+name = "General Dynamics Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/GD"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "GE"
+name = "General Electric Co"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/GE"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "GILD"
+name = "Gilead Sciences Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/GILD"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "GLW"
+name = "Corning Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/GLW"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "GM"
+name = "General Motors Co"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/GM"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "GOOG"
+name = "Alphabet Inc Class C"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/GOOG"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "GOOGL"
+name = "Alphabet Inc Class A"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/GOOGL"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "GS"
+name = "Goldman Sachs Group Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/GS"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "HAL"
+name = "Halliburton Co"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/HAL"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "HCA"
+name = "HCA Healthcare Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/HCA"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "HD"
+name = "Home Depot Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/HD"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "HLT"
+name = "Hilton Worldwide Holdings Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/HLT"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "HON"
+name = "Honeywell International Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/HON"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "HPE"
+name = "Hewlett Packard Enterprise Co"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/HPE"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "HPQ"
+name = "HP Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/HPQ"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "IBM"
+name = "IBM Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/IBM"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "ICE"
+name = "Intercontinental Exchange Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/ICE"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "IDXX"
+name = "IDEXX Laboratories Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/IDXX"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "INTU"
+name = "Intuit Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/INTU"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "IQV"
+name = "IQVIA Holdings Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/IQV"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "ISRG"
+name = "Intuitive Surgical Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/ISRG"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "IT"
+name = "Gartner Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/IT"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "ITW"
+name = "Illinois Tool Works Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/ITW"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "JNJ"
+name = "Johnson & Johnson"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/JNJ"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "JPM"
+name = "JPMorgan Chase & Co"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/JPM"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "KBR"
+name = "KBR Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/KBR"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "KDP"
+name = "Keurig Dr Pepper Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/KDP"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "KEY"
+name = "KeyCorp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/KEY"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "KLAC"
+name = "KLA Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/KLAC"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "KMB"
+name = "Kimberly-Clark Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/KMB"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "KMI"
+name = "Kinder Morgan Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/KMI"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "KO"
+name = "Coca-Cola Co"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/KO"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "KVUE"
+name = "Kenvue Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/KVUE"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "LHX"
+name = "L3Harris Technologies Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/LHX"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "LIN"
+name = "Linde PLC"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/LIN"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "LLY"
+name = "Eli Lilly and Co"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/LLY"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "LOW"
+name = "Lowe's Companies Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/LOW"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "LRCX"
+name = "Lam Research Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/LRCX"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "MA"
+name = "Mastercard Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/MA"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "MAR"
+name = "Marriott International Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/MAR"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "MCD"
+name = "McDonald's Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/MCD"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "MCHP"
+name = "Microchip Technology Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/MCHP"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "MCK"
+name = "McKesson Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/MCK"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "MCO"
+name = "Moody's Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/MCO"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "MDLZ"
+name = "Mondelez International Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/MDLZ"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "MDT"
+name = "Medtronic PLC"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/MDT"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "MET"
+name = "MetLife Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/MET"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "META"
+name = "Meta Platforms Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/META"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "MLM"
+name = "Martin Marietta Materials Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/MLM"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "MNST"
+name = "Monster Beverage Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/MNST"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "MRK"
+name = "Merck & Co Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/MRK"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "MRVL"
+name = "Marvell Technology Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/MRVL"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "MS"
+name = "Morgan Stanley"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/MS"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "MSCI"
+name = "MSCI Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/MSCI"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "MSFT"
+name = "Microsoft Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/MSFT"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "MSI"
+name = "Motorola Solutions Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/MSI"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "MTD"
+name = "Mettler-Toledo International Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/MTD"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "MU"
+name = "Micron Technology Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/MU"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "NFLX"
+name = "Netflix Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/NFLX"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "NKE"
+name = "Nike Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/NKE"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "NOW"
+name = "ServiceNow Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/NOW"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "NSC"
+name = "Norfolk Southern Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/NSC"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "NVDA"
+name = "Nvidia Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/NVDA"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "ON"
+name = "ON Semiconductor Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/ON"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "ORLY"
+name = "O'Reilly Automotive Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/ORLY"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "OTIS"
+name = "Otis Worldwide Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/OTIS"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "OXY"
+name = "Occidental Petroleum Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/OXY"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "PANW"
+name = "Palo Alto Networks Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/PANW"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "PAYX"
+name = "Paychex Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/PAYX"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "PCAR"
+name = "PACCAR Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/PCAR"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "PEG"
+name = "Public Service Enterprise Group Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/PEG"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "PEP"
+name = "PepsiCo Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/PEP"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "PFE"
+name = "Pfizer Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/PFE"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "PG"
+name = "Procter & Gamble Co"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/PG"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "PGR"
+name = "Progressive Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/PGR"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "PH"
+name = "Parker-Hannifin Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/PH"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "PLD"
+name = "Prologis Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/PLD"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "PM"
+name = "Philip Morris International Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/PM"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "PPG"
+name = "PPG Industries Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/PPG"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "PRU"
+name = "Prudential Financial Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/PRU"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "PSA"
+name = "Public Storage"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/PSA"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "PSX"
+name = "Phillips 66"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/PSX"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "QCOM"
+name = "Qualcomm Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/QCOM"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "REGN"
+name = "Regeneron Pharmaceuticals Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/REGN"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "RMD"
+name = "ResMed Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/RMD"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "ROK"
+name = "Rockwell Automation Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/ROK"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "ROP"
+name = "Roper Technologies Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/ROP"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "ROST"
+name = "Ross Stores Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/ROST"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "RTX"
+name = "Raytheon Technologies RTX Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/RTX"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "SBUX"
+name = "Starbucks Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/SBUX"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "SHW"
+name = "Sherwin-Williams Co"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/SHW"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "SLB"
+name = "Schlumberger NV"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/SLB"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "SNPS"
+name = "Synopsys Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/SNPS"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "SO"
+name = "Southern Co"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/SO"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "SPG"
+name = "Simon Property Group Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/SPG"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "SPGI"
+name = "S&P Global Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/SPGI"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "SRE"
+name = "Sempra"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/SRE"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "SYK"
+name = "Stryker Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/SYK"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "SYY"
+name = "Sysco Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/SYY"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "TDG"
+name = "TransDigm Group Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/TDG"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "TGT"
+name = "Target Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/TGT"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "TJX"
+name = "TJX Companies Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/TJX"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "TMO"
+name = "Thermo Fisher Scientific Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/TMO"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "TMUS"
+name = "T-Mobile US Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/TMUS"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "TROW"
+name = "T. Rowe Price Group Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/TROW"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "TRV"
+name = "Travelers Companies Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/TRV"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "TSLA"
+name = "Tesla Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/TSLA"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "TSN"
+name = "Tyson Foods Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/TSN"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "TT"
+name = "Trane Technologies PLC"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/TT"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "TXN"
+name = "Texas Instruments Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/TXN"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "UBER"
+name = "Uber Technologies Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/UBER"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "UNH"
+name = "UnitedHealth Group Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/UNH"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "UNP"
+name = "Union Pacific Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/UNP"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "UPS"
+name = "United Parcel Service Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/UPS"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "V"
+name = "Visa Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/V"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "VLO"
+name = "Valero Energy Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/VLO"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "VMC"
+name = "Vulcan Materials Co"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/VMC"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "VRSK"
+name = "Verisk Analytics Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/VRSK"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "VRTX"
+name = "Vertex Pharmaceuticals Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/VRTX"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "VZ"
+name = "Verizon Communications Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/VZ"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "WEC"
+name = "WEC Energy Group Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/WEC"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "WELL"
+name = "Welltower Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/WELL"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "WFC"
+name = "Wells Fargo & Co"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/WFC"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "WM"
+name = "Waste Management Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/WM"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "WMB"
+name = "Williams Companies Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/WMB"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "WMT"
+name = "Walmart Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/WMT"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "XEL"
+name = "Xcel Energy Inc"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/XEL"
+
+[[assets]]
+type = "STOCK_US"
+symbol = "XOM"
+name = "Exxon Mobil Corp"
+quote_currency = "USD"
+provider = "data912"
+provider_ref = "usa_stocks/XOM"

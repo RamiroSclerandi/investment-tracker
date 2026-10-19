@@ -94,7 +94,7 @@ def test_upgrade_strips_default_grants_from_exposed_roles_on_new_market_tables(
             _run_as_owner(
                 database_url,
                 "SELECT count(*) FROM pg_class c, aclexplode(c.relacl) acl"
-                " WHERE c.relnamespace = 'app'::regnamespace AND c.relname = 'assets'"
+                " WHERE c.relnamespace = 'app'::regnamespace"
                 " AND (acl.grantee = 0 OR acl.grantee IN (SELECT oid FROM pg_roles"
                 " WHERE rolname IN ('anon', 'authenticated', 'service_role')))",
             )

@@ -20,6 +20,7 @@ uv sync
 uv run pytest -q
 uv run ruff check . && uv run ruff format --check . && uv run mypy .
 DATABASE_URL=... uv run uvicorn investment_tracker.main:build_app --factory --reload
+DATABASE_URL=... uv run python -m investment_tracker.cli seed-assets  # loads seed/assets.toml; safe to re-run
 ```
 
 ## Tests
