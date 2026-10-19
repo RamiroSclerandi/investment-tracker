@@ -1,3 +1,4 @@
+import hmac
 import ipaddress
 
 from fastapi import FastAPI, Request
@@ -13,13 +14,30 @@ from investment_tracker.core.errors import problem_response
 # Render's Cloudflare edge rejects forged values of this header; every other client-IP header
 # can be forged on the direct-to-Render path.
 CLIENT_IP_HEADER = "cf-connecting-ip"
+# Forgeable on the direct-to-Render path, so trusted only with the secret the Vercel proxy sends.
+PROXIED_CLIENT_IP_HEADER = "x-vercel-forwarded-for"
+PROXY_VERIFICATION_HEADER = "x-proxy-secret"
 UNKNOWN_CLIENT_KEY = "unknown-client"
 IPV6_VERSION = 6
 
 
+def is_proxy_verified(request: Request) -> bool:
+    secret = request.app.state.settings.proxy_shared_secret
+    if secret is None:
+        return False
+    supplied = request.headers.get(PROXY_VERIFICATION_HEADER, "")
+    return hmac.compare_digest(supplied.encode(), secret.get_secret_value().encode())
+
+
+def _raw_client_ip(request: Request) -> str:
+    if is_proxy_verified(request):
+        return request.headers.get(PROXIED_CLIENT_IP_HEADER, "").split(",")[0]
+    return request.headers.get(CLIENT_IP_HEADER, "")
+
+
 def client_ip(request: Request) -> ipaddress.IPv4Address | ipaddress.IPv6Address | None:
     try:
-        address = ipaddress.ip_address(request.headers.get(CLIENT_IP_HEADER, "").strip())
+        address = ipaddress.ip_address(_raw_client_ip(request).strip())
     except ValueError:
         return None
     # A zone suffix never comes from a real client and would give each suffix its own bucket.

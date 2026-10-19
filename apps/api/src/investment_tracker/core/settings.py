@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore", hide_input_in_errors=True)
 
     database_url: SecretStr
-    environment: Literal["development", "test", "production"] = "development"
+    environment: Literal["development", "test", "production"]
     log_level: Literal["DEBUG", "INFO", "WARNING", "ERROR"] = "INFO"
     readyz_timeout_seconds: float = Field(default=2.0, gt=0)
     smtp_url: SecretStr | None = None
@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     gmail_client_secret: SecretStr | None = None
     gmail_refresh_token: SecretStr | None = None
     gmail_sender: EmailStr | None = None
+    proxy_shared_secret: SecretStr | None = Field(default=None, min_length=32)
 
     @field_validator(
         "gmail_client_id",
@@ -120,5 +121,14 @@ class Settings(BaseSettings):
             raise ValueError(
                 "WEB_BASE_URL must be the public https origin of the web app in production,"
                 " e.g. https://example.vercel.app."
+            )
+        return self
+
+    @model_validator(mode="after")
+    def validate_production_proxy_shared_secret(self) -> Self:
+        if self.environment == "production" and self.proxy_shared_secret is None:
+            raise ValueError(
+                "PROXY_SHARED_SECRET is required in production: set it to the secret of at least"
+                " 32 characters that the web proxy sends in the x-proxy-secret header."
             )
         return self

@@ -24,6 +24,7 @@ def _ed25519_pem() -> str:
 JWT_PRIVATE_KEY = SecretStr(_ed25519_pem())
 TLS_SMTP_URL = SecretStr("smtps://user:pass@smtp.example.com:465")
 PUBLIC_WEB_BASE_URL = "https://app.example.com"
+PROXY_SHARED_SECRET = SecretStr(secrets.token_urlsafe(32))
 
 
 def test_email_settings_default_to_unconfigured_delivery_and_local_web_url() -> None:
@@ -49,6 +50,7 @@ def test_production_accepts_tls_smtp(scheme: str) -> None:
     settings = Settings(
         database_url=DATABASE_URL,
         environment="production",
+        proxy_shared_secret=PROXY_SHARED_SECRET,
         jwt_private_key=JWT_PRIVATE_KEY,
         smtp_url=SecretStr(f"{scheme}://user:pass@smtp.example.com:587"),
         web_base_url=PUBLIC_WEB_BASE_URL,
@@ -92,6 +94,7 @@ def test_production_accepts_an_ed25519_jwt_private_key() -> None:
     settings = Settings(
         database_url=DATABASE_URL,
         environment="production",
+        proxy_shared_secret=PROXY_SHARED_SECRET,
         jwt_private_key=JWT_PRIVATE_KEY,
         smtp_url=TLS_SMTP_URL,
         web_base_url=PUBLIC_WEB_BASE_URL,
@@ -135,6 +138,7 @@ def test_production_boots_without_google_credentials() -> None:
     settings = Settings(
         database_url=DATABASE_URL,
         environment="production",
+        proxy_shared_secret=PROXY_SHARED_SECRET,
         jwt_private_key=JWT_PRIVATE_KEY,
         smtp_url=TLS_SMTP_URL,
         web_base_url=PUBLIC_WEB_BASE_URL,
@@ -244,6 +248,7 @@ def test_production_accepts_gmail_as_the_email_sender() -> None:
     settings = Settings(
         database_url=DATABASE_URL,
         environment="production",
+        proxy_shared_secret=PROXY_SHARED_SECRET,
         jwt_private_key=JWT_PRIVATE_KEY,
         web_base_url=PUBLIC_WEB_BASE_URL,
         _env_file=None,
@@ -258,6 +263,7 @@ def test_production_accepts_a_tls_smtp_url_as_the_email_sender() -> None:
     settings = Settings(
         database_url=DATABASE_URL,
         environment="production",
+        proxy_shared_secret=PROXY_SHARED_SECRET,
         jwt_private_key=JWT_PRIVATE_KEY,
         smtp_url=TLS_SMTP_URL,
         web_base_url=PUBLIC_WEB_BASE_URL,
@@ -319,6 +325,7 @@ def test_production_accepts_an_https_web_base_url() -> None:
     settings = Settings(
         database_url=DATABASE_URL,
         environment="production",
+        proxy_shared_secret=PROXY_SHARED_SECRET,
         jwt_private_key=JWT_PRIVATE_KEY,
         smtp_url=TLS_SMTP_URL,
         web_base_url="https://example.vercel.app/",
@@ -335,3 +342,36 @@ def test_non_production_boots_with_defaults_and_no_email_sender(environment: str
     assert settings.web_base_url == "http://localhost:5173"
     assert settings.smtp_url is None
     assert settings.gmail_sender is None
+    assert settings.proxy_shared_secret is None
+
+
+def test_production_requires_a_proxy_shared_secret() -> None:
+    with pytest.raises(ValidationError, match="PROXY_SHARED_SECRET is required in production"):
+        Settings(
+            database_url=DATABASE_URL,
+            environment="production",
+            jwt_private_key=JWT_PRIVATE_KEY,
+            smtp_url=TLS_SMTP_URL,
+            web_base_url=PUBLIC_WEB_BASE_URL,
+            _env_file=None,
+        )
+
+
+def test_a_proxy_shared_secret_shorter_than_32_characters_is_rejected() -> None:
+    short = "s" * 31
+
+    with pytest.raises(ValidationError, match="proxy_shared_secret") as excinfo:
+        Settings(database_url=DATABASE_URL, proxy_shared_secret=SecretStr(short), _env_file=None)
+
+    assert short not in str(excinfo.value)
+
+
+def test_the_proxy_shared_secret_is_read_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    value = "p" * 32
+    monkeypatch.setenv("PROXY_SHARED_SECRET", value)
+
+    settings = Settings(database_url=DATABASE_URL, _env_file=None)
+
+    assert settings.proxy_shared_secret is not None
+    assert settings.proxy_shared_secret.get_secret_value() == value
+    assert value not in repr(settings)

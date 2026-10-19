@@ -8,7 +8,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
 from investment_tracker.core.errors import DomainError
-from investment_tracker.core.rate_limit import client_ip_key
+from investment_tracker.core.rate_limit import client_ip_key, is_proxy_verified
 
 logger = structlog.get_logger()
 
@@ -57,6 +57,7 @@ async def readyz(request: Request) -> HealthStatus:
 
 class ClientIpDebug(BaseModel):
     rate_limit_key: str
+    proxy_verified: bool
     headers: dict[str, str | None]
 
 
@@ -65,5 +66,6 @@ async def client_ip_debug(request: Request, response: Response) -> ClientIpDebug
     response.headers["Cache-Control"] = "no-store"
     return ClientIpDebug(
         rate_limit_key=client_ip_key(request),
+        proxy_verified=is_proxy_verified(request),
         headers={name: request.headers.get(name) for name in CLIENT_IP_HEADERS},
     )
