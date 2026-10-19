@@ -73,3 +73,39 @@ def test_upgrade_refuses_a_pre_existing_app_role_with_unsafe_attributes(
     )
     # A global default would change every future owner function in every schema.
     assert global_function_defaults == 0
+
+
+def test_upgrade_strips_default_grants_from_exposed_roles_on_new_market_tables(
+    database_url: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("DATABASE_URL", database_url)
+    config = Config(str(API_ROOT / "alembic.ini"))
+    command.upgrade(config, "head")
+    command.downgrade(config, "0005")
+    grant_defaults = (
+        "ALTER DEFAULT PRIVILEGES FOR ROLE CURRENT_USER"
+        " GRANT ALL ON TABLES TO PUBLIC, anon, authenticated, service_role"
+    )
+    asyncio.run(_run_as_owner(database_url, grant_defaults))
+
+    try:
+        command.upgrade(config, "head")
+        [exposed_grants] = asyncio.run(
+            _run_as_owner(
+                database_url,
+                "SELECT count(*) FROM pg_class c, aclexplode(c.relacl) acl"
+                " WHERE c.relnamespace = 'app'::regnamespace AND c.relname = 'assets'"
+                " AND (acl.grantee = 0 OR acl.grantee IN (SELECT oid FROM pg_roles"
+                " WHERE rolname IN ('anon', 'authenticated', 'service_role')))",
+            )
+        )
+    finally:
+        asyncio.run(
+            _run_as_owner(
+                database_url,
+                "ALTER DEFAULT PRIVILEGES FOR ROLE CURRENT_USER"
+                " REVOKE ALL ON TABLES FROM PUBLIC, anon, authenticated, service_role",
+            )
+        )
+
+    assert exposed_grants == 0
