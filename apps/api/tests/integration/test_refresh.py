@@ -97,12 +97,80 @@ async def test_refresh_rotates_the_token_within_the_same_family(
     assert (await _refresh(client, new)).status_code == 200
 
 
+async def _rotate(client: httpx.AsyncClient, cookie: str) -> str:
+    _, rotated, _ = _cookie_attributes((await _refresh(client, cookie)).headers["set-cookie"])
+    return rotated
+
+
+async def _age_rotation(engine: AsyncEngine, raw: str, seconds: int) -> None:
+    async with engine.begin() as connection:
+        await connection.execute(
+            text(
+                "UPDATE app.refresh_tokens SET rotated_at = rotated_at - make_interval(secs => :s)"
+                " WHERE token_hash = :token_hash"
+            ),
+            {"s": seconds, "token_hash": hash_token(raw)},
+        )
+
+
+async def test_retrying_a_rotation_whose_response_was_lost_issues_a_fresh_token(
+    client: httpx.AsyncClient, engine: AsyncEngine
+) -> None:
+    user_id = await _create_user(engine)
+    old, _ = await _login_cookie(client)
+    lost = await _rotate(client, old)
+    rotated_at = _row(await _refresh_tokens(engine, user_id), old)["rotated_at"]
+
+    retry = await _refresh(client, old)
+
+    assert retry.status_code == 200
+    _, fresh, _ = _cookie_attributes(retry.headers["set-cookie"])
+    rows = await _refresh_tokens(engine, user_id)
+    assert _row(rows, old)["rotated_at"] == rotated_at
+    assert _row(rows, lost)["revoked_at"] is not None
+    assert _row(rows, fresh)["revoked_at"] is None
+    assert (await _refresh(client, fresh)).status_code == 200
+
+
+async def test_presenting_the_token_a_retry_revoked_revokes_the_whole_family(
+    client: httpx.AsyncClient, engine: AsyncEngine
+) -> None:
+    user_id = await _create_user(engine)
+    old, _ = await _login_cookie(client)
+    lost = await _rotate(client, old)
+    fresh = await _rotate(client, old)
+
+    presented = await _refresh(client, lost)
+
+    assert presented.status_code == 401
+    assert (await _refresh(client, fresh)).status_code == 401
+    rows = await _refresh_tokens(engine, user_id)
+    assert all(row["revoked_at"] is not None for row in rows)
+
+
+async def test_reusing_a_rotated_token_after_the_grace_window_revokes_the_whole_family(
+    client: httpx.AsyncClient, engine: AsyncEngine
+) -> None:
+    user_id = await _create_user(engine)
+    old, _ = await _login_cookie(client)
+    newest = await _rotate(client, old)
+    await _age_rotation(engine, old, 31)
+
+    reused = await _refresh(client, old)
+
+    assert reused.status_code == 401
+    assert (await _refresh(client, newest)).status_code == 401
+    rows = await _refresh_tokens(engine, user_id)
+    assert all(row["revoked_at"] is not None for row in rows)
+
+
 async def test_reusing_a_rotated_token_revokes_the_whole_family(
     client: httpx.AsyncClient, engine: AsyncEngine
 ) -> None:
     user_id = await _create_user(engine)
     old, _ = await _login_cookie(client)
-    _, newest, _ = _cookie_attributes((await _refresh(client, old)).headers["set-cookie"])
+    used = await _rotate(client, old)
+    newest = await _rotate(client, used)
 
     reused = await _refresh(client, old)
     after_reuse = await _refresh(client, newest)
@@ -121,7 +189,7 @@ async def test_reuse_leaves_other_families_alone(
     await _create_user(engine)
     old, _ = await _login_cookie(client)
     other, _ = await _login_cookie(client)
-    await _refresh(client, old)
+    await _rotate(client, await _rotate(client, old))
 
     await _refresh(client, old)
 
@@ -212,7 +280,7 @@ async def test_the_thirty_first_refresh_per_ip_within_a_minute_is_rate_limited(
     assert other_ip.status_code == 401
 
 
-async def test_concurrent_refreshes_with_the_same_token_leave_exactly_one_success(
+async def test_concurrent_refreshes_with_the_same_token_leave_exactly_one_live_token(
     client: httpx.AsyncClient, engine: AsyncEngine
 ) -> None:
     user_id = await _create_user(engine)
@@ -220,10 +288,11 @@ async def test_concurrent_refreshes_with_the_same_token_leave_exactly_one_succes
 
     responses = await asyncio.gather(_refresh(client, cookie), _refresh(client, cookie))
 
-    assert sorted(response.status_code for response in responses) == [200, 401]
+    assert [response.status_code for response in responses] == [200, 200]
     rows = await _refresh_tokens(engine, user_id)
-    assert len(rows) == 2
-    assert all(row["revoked_at"] is not None for row in rows)
+    live = [row for row in rows if row["rotated_at"] is None and row["revoked_at"] is None]
+    assert len(rows) == 3
+    assert len(live) == 1
 
 
 async def _logout(client: httpx.AsyncClient, cookie: str | None) -> httpx.Response:
