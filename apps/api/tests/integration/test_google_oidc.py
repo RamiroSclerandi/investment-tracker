@@ -14,7 +14,12 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 from investment_tracker.auth.passwords import hash_password
 from investment_tracker.auth.tokens import hash_token
-from investment_tracker.core.rate_limit import forgot_email_limiter, limiter, login_limiter
+from investment_tracker.core.rate_limit import (
+    forgot_client_email_limiter,
+    forgot_email_limiter,
+    limiter,
+    login_limiter,
+)
 from investment_tracker.core.settings import Settings
 from investment_tracker.main import create_app
 from tests.google_fakes import (
@@ -48,6 +53,7 @@ def app(
 ) -> FastAPI:
     limiter.reset()
     login_limiter.reset()
+    forgot_client_email_limiter.reset()
     forgot_email_limiter.reset()
     settings = Settings(
         database_url=SecretStr(migrated_database_url),

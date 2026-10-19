@@ -82,7 +82,10 @@ class KeyedRateLimiter:
 
 
 login_limiter = KeyedRateLimiter("5/minute")
-forgot_email_limiter = KeyedRateLimiter("3/hour")
+# Per address and client, so one client cannot use up another person's reset emails.
+forgot_client_email_limiter = KeyedRateLimiter("3/hour")
+# Caps how many reset emails one address receives from every client together.
+forgot_email_limiter = KeyedRateLimiter("10/hour")
 
 # Every limit that answers 429 is per minute, so one full window is the longest wait to announce.
 RATE_LIMITED_RETRY_AFTER_SECONDS = 60
