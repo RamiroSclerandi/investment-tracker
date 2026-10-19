@@ -137,3 +137,15 @@ async def test_an_ephemeral_signing_key_is_generated_outside_production_without_
     output = capsys.readouterr().out
     assert "jwt_signing_key_ephemeral" in output
     assert "PRIVATE KEY" not in output
+
+
+async def test_the_lifespan_builds_the_market_providers_on_one_http_client_and_closes_it() -> None:
+    app = create_app(Settings(database_url=SecretStr(DATABASE_URL), _env_file=None))
+
+    async with app.router.lifespan_context(app):
+        client = app.state.http_client
+        providers = app.state.providers
+        assert not client.is_closed
+        assert {providers.mep.name, providers.mep_fallback.name} == {"dolarapi", "data912"}
+
+    assert client.is_closed

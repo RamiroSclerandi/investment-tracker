@@ -1,0 +1,242 @@
+[
+  {
+    "fondo": "1810 Ahorro",
+    "horizonte": "corto",
+    "fecha": "2026-10-16",
+    "vcp": 242182.465,
+    "ccp": 6550556719,
+    "patrimonio": 1586429976366.02
+  },
+  {
+    "fondo": "1822 Raices Ahorro Dólares - Clase A",
+    "horizonte": "corto",
+    "fecha": "2026-10-16",
+    "vcp": 1004.863,
+    "ccp": 53037516.19,
+    "patrimonio": 53295460.57
+  },
+  {
+    "fondo": "1822 Raices Ahorro Pesos - Clase A",
+    "horizonte": "corto",
+    "fecha": "2026-10-16",
+    "vcp": 38661.176,
+    "ccp": 7172797776.58,
+    "patrimonio": 277308795710.82
+  },
+  {
+    "fondo": "1822 Raices Ahorro Pesos - Clase B",
+    "horizonte": "corto",
+    "fecha": "2026-10-16",
+    "vcp": 38669.938,
+    "ccp": 39919939972.4,
+    "patrimonio": 1543701594885.7
+  },
+  {
+    "fondo": "1822 Raices Ahorro Pesos - Clase C",
+    "horizonte": "corto",
+    "fecha": "2026-10-16",
+    "vcp": 38372.922,
+    "ccp": 0,
+    "patrimonio": 0
+  },
+  {
+    "fondo": "ADBlick Ganaderia FCIC",
+    "horizonte": "medio",
+    "fecha": "2026-02-27",
+    "vcp": 1155.173,
+    "ccp": 186875188,
+    "patrimonio": 2158731296
+  },
+  {
+    "fondo": "Adcap Ahorro Dinámico Fondo de Dinero - Clase A",
+    "horizonte": "corto",
+    "fecha": "2026-10-16",
+    "vcp": 3878.841,
+    "ccp": 561778785.78,
+    "patrimonio": 2179050496.64
+  },
+  {
+    "fondo": "Adcap Ahorro Dinámico Fondo de Dinero - Clase B",
+    "horizonte": "corto",
+    "fecha": "2026-10-16",
+    "vcp": 3965.479,
+    "ccp": 6528821395.54,
+    "patrimonio": 25889904786.51
+  },
+  {
+    "fondo": "Adcap Ahorro Dinámico Fondo de Dinero - Clase C",
+    "horizonte": "corto",
+    "fecha": "2026-10-16",
+    "vcp": 4125.897,
+    "ccp": 1610837999.23,
+    "patrimonio": 6646151791.2
+  },
+  {
+    "fondo": "Adcap Ahorro Dinámico Fondo de Dinero - Clase G",
+    "horizonte": "corto",
+    "fecha": "2026-10-16",
+    "vcp": 1166.114,
+    "ccp": 2325189.75,
+    "patrimonio": 2711435.59
+  },
+  {
+    "fondo": "Adcap Ahorro Dinámico Fondo de Dinero - Clase Ley Nº 27.743",
+    "horizonte": "corto",
+    "fecha": "2026-02-18",
+    "vcp": 1597.18,
+    "ccp": 0,
+    "patrimonio": 0
+  },
+  {
+    "fondo": "Adcap Ahorro Dólares - Clase C",
+    "horizonte": "corto",
+    "fecha": "2026-10-16",
+    "vcp": 1044.063,
+    "ccp": 24901348.52,
+    "patrimonio": 25998564.85
+  },
+  {
+    "fondo": "Adcap Ahorro Dólares - Clase D",
+    "horizonte": "corto",
+    "fecha": "2026-10-16",
+    "vcp": 1042.192,
+    "ccp": 37384099.71,
+    "patrimonio": 38961426.33
+  },
+  {
+    "fondo": "Adcap Ahorro Dólares - Clase E",
+    "horizonte": "corto",
+    "fecha": "2026-10-16",
+    "vcp": 1043.218,
+    "ccp": 121686796.98,
+    "patrimonio": 126945847.58
+  },
+  {
+    "fondo": "Adcap Ahorro Dólares - Clase F",
+    "horizonte": "corto",
+    "fecha": "2026-10-16",
+    "vcp": 1042.947,
+    "ccp": 6216870.47,
+    "patrimonio": 6483865.81
+  },
+  {
+    "fondo": "Adcap Ahorro Dólares - Clase G",
+    "horizonte": "corto",
+    "fecha": "2026-10-16",
+    "vcp": 1016.727,
+    "ccp": 0,
+    "patrimonio": 0
+  },
+  {
+    "fondo": "Adcap Ahorro Dólares - Clase Ley Nº 27.743",
+    "horizonte": "corto",
+    "fecha": "2026-08-24",
+    "vcp": 1039.678,
+    "ccp": 0,
+    "patrimonio": 0
+  },
+  {
+    "fondo": "Adcap Ahorro Pesos Fondo de Dinero - Clase A",
+    "horizonte": "corto",
+    "fecha": "2026-10-16",
+    "vcp": 19336.62,
+    "ccp": 1129861290.52,
+    "patrimonio": 21847697904.63
+  },
+  {
+    "fondo": "Adcap Ahorro Pesos Fondo de Dinero - Clase B",
+    "horizonte": "corto",
+    "fecha": "2026-10-16",
+    "vcp": 20635.948,
+    "ccp": 20910936637.24,
+    "patrimonio": 431517005826.23
+  },
+  {
+    "fondo": "Adcap Ahorro Pesos Fondo de Dinero - Clase C",
+    "horizonte": "corto",
+    "fecha": "2026-10-16",
+    "vcp": 20936.427,
+    "ccp": 18227401379.05,
+    "patrimonio": 381616661775.76
+  },
+  {
+    "fondo": "Adcap Ahorro Pesos Fondo de Dinero - Clase G",
+    "horizonte": "corto",
+    "fecha": "2026-10-16",
+    "vcp": 1225.989,
+    "ccp": 89704992494.27,
+    "patrimonio": 109977356953.16
+  },
+  {
+    "fondo": "Adcap Ahorro Pesos Fondo de Dinero - Clase H",
+    "horizonte": "corto",
+    "fecha": "2023-11-21",
+    "vcp": 14285.714,
+    "ccp": 0,
+    "patrimonio": 0.01
+  },
+  {
+    "fondo": "Adcap Ahorro Pesos Fondo de Dinero - Clase H1",
+    "horizonte": "corto",
+    "fecha": "2026-10-16",
+    "vcp": 1543.282,
+    "ccp": 66085914.23,
+    "patrimonio": 101989233.82
+  },
+  {
+    "fondo": "Adcap Ahorro Pesos Fondo de Dinero - Clase H2",
+    "horizonte": "corto",
+    "fecha": "2025-11-27",
+    "vcp": 1000,
+    "ccp": 0,
+    "patrimonio": 0
+  },
+  {
+    "fondo": "Adcap Ahorro Pesos Fondo de Dinero - Clase H3",
+    "horizonte": "corto",
+    "fecha": "2025-11-27",
+    "vcp": 1000,
+    "ccp": 0,
+    "patrimonio": 0
+  },
+  {
+    "fondo": "Adcap Ahorro Pesos Fondo de Dinero - Clase H4",
+    "horizonte": "corto",
+    "fecha": "2025-11-27",
+    "vcp": 1000,
+    "ccp": 0,
+    "patrimonio": 0
+  },
+  {
+    "fondo": "Adcap Ahorro Pesos Fondo de Dinero - Clase H5",
+    "horizonte": "corto",
+    "fecha": "2025-11-27",
+    "vcp": 1000,
+    "ccp": 0,
+    "patrimonio": 0
+  },
+  {
+    "fondo": "Adcap Ahorro Pesos Fondo de Dinero - Clase H6",
+    "horizonte": "corto",
+    "fecha": "2025-11-27",
+    "vcp": 1000,
+    "ccp": 0,
+    "patrimonio": 0
+  },
+  {
+    "fondo": "Adcap Ahorro Pesos Fondo de Dinero - Clase H7",
+    "horizonte": "corto",
+    "fecha": "2025-11-27",
+    "vcp": 1000,
+    "ccp": 0,
+    "patrimonio": 0
+  },
+  {
+    "fondo": "Adcap Ahorro Pesos Fondo de Dinero - Clase H8",
+    "horizonte": "corto",
+    "fecha": "2025-11-27",
+    "vcp": 1000,
+    "ccp": 0,
+    "patrimonio": 0
+  }
+]
