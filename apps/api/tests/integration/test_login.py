@@ -4,6 +4,7 @@ from datetime import UTC, datetime, timedelta
 import httpx
 import pytest
 from fastapi import FastAPI
+from pydantic import SecretStr
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -20,6 +21,7 @@ TOO_LONG_PASSWORD = "x" * 129
 LOGIN_URL = "/api/v1/auth/login"
 ME_URL = "/api/v1/auth/me"
 CLIENT_IP = {"CF-Connecting-IP": "203.0.113.7"}
+PROXY_SECRET = "proxy-secret-" + "x" * 32
 PASSWORD_HASH = hash_password(PASSWORD)
 
 
@@ -147,6 +149,32 @@ async def test_login_stores_a_truncated_user_agent_and_no_ip_without_a_valid_cli
     [stored] = await _refresh_tokens(engine, user_id)
     assert stored["user_agent"] == "x" * 256
     assert stored["ip"] is None
+
+
+@pytest.mark.parametrize(
+    ("supplied_secret", "expected_ip"),
+    [(PROXY_SECRET, "198.51.100.4"), ("wrong-secret", "203.0.113.7"), (None, "203.0.113.7")],
+)
+async def test_login_stores_the_proxied_ip_only_behind_a_verified_proxy(
+    client: httpx.AsyncClient,
+    engine: AsyncEngine,
+    app: FastAPI,
+    supplied_secret: str | None,
+    expected_ip: str,
+) -> None:
+    app.state.settings = app.state.settings.model_copy(
+        update={"proxy_shared_secret": SecretStr(PROXY_SECRET)}
+    )
+    user_id = await _create_user(engine)
+    headers = {**CLIENT_IP, "X-Vercel-Forwarded-For": "198.51.100.4"}
+    if supplied_secret is not None:
+        headers["X-Proxy-Secret"] = supplied_secret
+
+    response = await _login(client, headers=headers)
+
+    assert response.status_code == 200
+    [stored] = await _refresh_tokens(engine, user_id)
+    assert str(stored["ip"]) == expected_ip
 
 
 async def test_an_unverified_user_with_the_right_password_is_told_to_verify(

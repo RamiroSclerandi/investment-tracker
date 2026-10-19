@@ -1,4 +1,5 @@
 import uuid
+from collections.abc import Awaitable, Callable
 from typing import Annotated, Literal, Self
 
 import structlog
@@ -238,6 +239,24 @@ def schedule_delivery(
         background_tasks.add_task(deliver_email, request.app.state.email_sender, message)
 
 
+async def issue_account_email(
+    request: Request,
+    issue: Callable[[AuthService, str], Awaitable[EmailMessage | None]],
+    email: str,
+) -> None:
+    # After the response, so timing cannot reveal an account; the request session is closed by then.
+    state = request.app.state
+    try:
+        async with state.sessionmaker() as session:
+            message = await issue(AuthService(session, state.settings), email)
+    # Top-level task boundary: an escaped error would print its message in a traceback.
+    except Exception as exc:
+        logger.warning("account_email_task_failed", error_type=type(exc).__name__)
+        return
+    if message is not None:
+        await deliver_email(state.email_sender, message)
+
+
 # The cookie path constant is the mounted prefix of both Google routes.
 OIDC_ROUTE_PATHS = (f"{OIDC_COOKIE_PATH}/start", f"{OIDC_COOKIE_PATH}/callback")
 
@@ -277,29 +296,25 @@ async def verify_email(
 @router.post("/resend-verification", status_code=status.HTTP_202_ACCEPTED)
 @limiter.limit("3/minute")
 async def resend_verification(
-    request: Request,
-    body: ResendVerificationRequest,
-    service: AuthServiceDep,
-    background_tasks: BackgroundTasks,
+    request: Request, body: ResendVerificationRequest, background_tasks: BackgroundTasks
 ) -> AcceptedResponse:
-    message = await service.resend_verification(body.email)
-    schedule_delivery(request, background_tasks, message)
+    background_tasks.add_task(
+        issue_account_email, request, AuthService.resend_verification, body.email
+    )
     return AcceptedResponse()
 
 
 @router.post("/password/forgot", status_code=status.HTTP_202_ACCEPTED)
 @limiter.limit("3/minute")
 async def forgot_password(
-    request: Request,
-    body: ForgotPasswordRequest,
-    service: AuthServiceDep,
-    background_tasks: BackgroundTasks,
+    request: Request, body: ForgotPasswordRequest, background_tasks: BackgroundTasks
 ) -> AcceptedResponse:
     if not forgot_email_limiter.allow(f"forgot:{body.email.lower()}"):
         # Dropped silently: a 429 or a delay here would reveal which addresses hit the cap.
         return AcceptedResponse()
-    message = await service.request_password_reset(body.email)
-    schedule_delivery(request, background_tasks, message)
+    background_tasks.add_task(
+        issue_account_email, request, AuthService.request_password_reset, body.email
+    )
     return AcceptedResponse()
 
 

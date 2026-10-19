@@ -24,6 +24,7 @@ services:
     build: ./apps/api
     environment:
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env (see .env.example)}@postgres:5432/${POSTGRES_DB:-investment_tracker}
+      ENVIRONMENT: development
       SMTP_URL: smtp://mailpit:1025
       WEB_BASE_URL: http://localhost:8080
     ports:
@@ -62,6 +63,7 @@ services:
       UV_LINK_MODE: copy
       # The image ships the latest 3.14.x it has built, which can trail the patch pinned in .python-version.
       UV_PYTHON: "3.14"
+      ENVIRONMENT: test
       DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env (see .env.example)}@postgres:5432/${POSTGRES_DB:-investment_tracker}
     depends_on:
       postgres:

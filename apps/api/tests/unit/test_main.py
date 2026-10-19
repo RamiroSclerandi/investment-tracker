@@ -29,6 +29,7 @@ def production_app() -> FastAPI:
             jwt_private_key=SecretStr(_ed25519_pem(Ed25519PrivateKey.generate())),
             smtp_url=SecretStr("smtps://user:pass@smtp.example.com:465"),
             web_base_url="https://app.example.com",
+            proxy_shared_secret=SecretStr("p" * 32),
         )
     )
 
