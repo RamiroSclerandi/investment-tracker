@@ -2,6 +2,21 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "npm install -g corepack@0.36.0 && corepack pnpm install --frozen-lockfile",
   "buildCommand": "corepack pnpm run build",
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "continue": true,
+      "transforms": [
+        {
+          "type": "request.headers",
+          "op": "set",
+          "target": { "key": "x-proxy-secret" },
+          "args": "$PROXY_SHARED_SECRET",
+          "env": ["PROXY_SHARED_SECRET"]
+        }
+      ]
+    }
+  ],
   "rewrites": [
     {
       "source": "/api/:path*",
