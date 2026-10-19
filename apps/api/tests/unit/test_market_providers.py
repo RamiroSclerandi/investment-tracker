@@ -180,16 +180,7 @@ def _data912_inverted() -> tuple[str, Any, Callable[[httpx.AsyncClient], Any]]:
     return "/live/mep", rows, lambda c: Data912Mep(c, now=_clock()).latest()
 
 
-def _mep_history_inverted() -> tuple[str, Any, Callable[[httpx.AsyncClient], Any]]:
-    rows = [{"casa": "bolsa", "compra": 1600, "venta": 1500, "fecha": "2026-10-13"}]
-    return (
-        "/v1/cotizaciones/dolares/bolsa",
-        rows,
-        lambda c: ArgentinaDatosMepHistory(c).history(date(2026, 10, 1), date(2026, 10, 31)),
-    )
-
-
-@pytest.mark.parametrize("case", [_dolarapi_inverted, _data912_inverted, _mep_history_inverted])
+@pytest.mark.parametrize("case", [_dolarapi_inverted, _data912_inverted])
 async def test_an_fx_rate_whose_sell_is_below_its_buy_is_rejected(
     case: Callable[[], tuple[str, Any, Callable[[httpx.AsyncClient], Any]]],
 ) -> None:
@@ -289,6 +280,55 @@ async def test_a_response_slower_than_the_total_deadline_is_rejected(
         await ArgentinaDatosHolidays(client).holidays(2026)
 
 
+async def test_argentinadatos_fci_skips_an_invalid_fund_row_and_keeps_the_rest() -> None:
+    rows = _fixture("argentinadatos_fci_mercadoDinero_ultimo.json")
+    rows = [{**rows[1], "vcp": 0}, *rows]
+    client = _client({"/v1/finanzas/fci/mercadoDinero/ultimo": rows})
+
+    points = await ArgentinaDatosFci(client, now=_clock()).latest(["mercadoDinero/1810 Ahorro"])
+
+    assert list(points) == ["mercadoDinero/1810 Ahorro"]
+
+
+async def test_argentinadatos_mep_history_skips_an_invalid_row_and_keeps_the_rest() -> None:
+    rows = [
+        {"casa": "bolsa", "compra": 1600, "venta": 1500, "fecha": "2026-10-12"},
+        {"casa": "bolsa", "compra": 1500, "venta": 1510, "fecha": "2026-10-13"},
+    ]
+    client = _client({"/v1/cotizaciones/dolares/bolsa": rows})
+
+    rates = await ArgentinaDatosMepHistory(client).history(date(2026, 10, 1), date(2026, 10, 31))
+
+    assert [r.day for r in rates] == [date(2026, 10, 13)]
+
+
 async def test_the_shared_http_client_asks_for_uncompressed_responses() -> None:
     async with create_http_client() as client:
         assert client.headers["Accept-Encoding"] == "identity"
+
+
+async def test_argentinadatos_mep_history_with_no_valid_row_is_a_provider_error() -> None:
+    rows = [{"casa": "bolsa", "compra": 1600, "venta": 1500, "fecha": "2026-10-13"}]
+    client = _client({"/v1/cotizaciones/dolares/bolsa": rows})
+
+    with pytest.raises(ProviderError, match=r"argentinadatos.*no valid rows"):
+        await ArgentinaDatosMepHistory(client).history(date(2026, 10, 1), date(2026, 10, 31))
+
+
+async def test_argentinadatos_fci_with_no_valid_requested_fund_is_a_provider_error() -> None:
+    rows = _fixture("argentinadatos_fci_mercadoDinero_ultimo.json")
+    rows = [{**r, "vcp": 0} if r["fondo"] == "1810 Ahorro" else r for r in rows]
+    client = _client({"/v1/finanzas/fci/mercadoDinero/ultimo": rows})
+
+    with pytest.raises(ProviderError, match=r"argentinadatos.*no valid rows"):
+        await ArgentinaDatosFci(client, now=_clock()).latest(["mercadoDinero/1810 Ahorro"])
+
+
+async def test_argentinadatos_fci_ignores_a_row_whose_fund_name_is_not_text() -> None:
+    rows = [{"fondo": ["x"], "fecha": "2026-10-16", "vcp": 1}]
+    rows += _fixture("argentinadatos_fci_mercadoDinero_ultimo.json")
+    client = _client({"/v1/finanzas/fci/mercadoDinero/ultimo": rows})
+
+    points = await ArgentinaDatosFci(client, now=_clock()).latest(["mercadoDinero/1810 Ahorro"])
+
+    assert list(points) == ["mercadoDinero/1810 Ahorro"]

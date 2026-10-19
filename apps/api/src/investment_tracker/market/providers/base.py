@@ -1,10 +1,10 @@
 import asyncio
 import enum
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta, timezone
 from decimal import Decimal
-from typing import Annotated, Protocol
+from typing import Annotated, Any, Protocol
 
 import httpx
 from pydantic import Field, StringConstraints, TypeAdapter, ValidationError
@@ -20,7 +20,9 @@ REQUEST_DEADLINE_SECONDS = 20.0
 Amount = Annotated[Decimal, Field(gt=0, lt=Decimal("1E20"), max_digits=30, allow_inf_nan=False)]
 FxAmount = Annotated[Decimal, Field(gt=0, lt=Decimal("1E14"), max_digits=20, allow_inf_nan=False)]
 Text = Annotated[str, StringConstraints(max_length=200, pattern=r"^[^\x00-\x1f\x7f-\x9f]*$")]
+Quote = Annotated[Decimal, Field(ge=0, lt=Decimal("1E20"), max_digits=30, allow_inf_nan=False)]
 type Items[T] = Annotated[list[T], Field(max_length=MAX_ITEMS)]
+RAW_ROWS: TypeAdapter[list[dict[str, Any]]] = TypeAdapter(Items[dict[str, Any]])
 
 Clock = Callable[[], datetime]
 
@@ -86,6 +88,18 @@ class ProviderError(Exception):
         self.provider = provider
 
 
+def valid_or_none[T](shape: TypeAdapter[T], raw: object) -> T | None:
+    try:
+        return shape.validate_python(raw)
+    except ValidationError:
+        return None
+
+
+def require_valid_rows(provider: str, source: str, candidates: int, valid: int) -> None:
+    if candidates and not valid:
+        raise ProviderError(provider, f"{source} returned no valid rows")
+
+
 def check_spread(buy: Decimal, sell: Decimal) -> None:
     if sell < buy:
         raise ValueError("sell is below buy")
@@ -106,12 +120,18 @@ class FxRateProvider(Protocol):
 
 
 async def get_json[T](
-    client: httpx.AsyncClient, provider: str, url: str, shape: TypeAdapter[T]
+    client: httpx.AsyncClient,
+    provider: str,
+    url: str,
+    shape: TypeAdapter[T],
+    *,
+    params: Mapping[str, str] | None = None,
+    headers: Mapping[str, str] | None = None,
 ) -> T:
     try:
         # The httpx timeout is per read, so a trickling server needs an overall deadline.
         async with asyncio.timeout(REQUEST_DEADLINE_SECONDS):
-            async with client.stream("GET", url) as response:
+            async with client.stream("GET", url, params=params, headers=headers) as response:
                 if response.status_code != httpx.codes.OK:
                     raise ProviderError(provider, f"{url} answered HTTP {response.status_code}")
                 body = await _read_capped(response, provider, url)
