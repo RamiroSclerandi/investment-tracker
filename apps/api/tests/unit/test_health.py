@@ -42,3 +42,44 @@ async def test_readyz_returns_503_problem_without_leaking_connection_details(
     assert body["request_id"]
     for secret in ("leaky-user", "leaky-pass", "leaky-host", "leaky_db", "asyncpg"):
         assert secret not in response.text
+
+
+async def test_client_ip_debug_echoes_the_client_ip_headers_as_received(
+    offline_client: httpx.AsyncClient,
+) -> None:
+    response = await offline_client.get(
+        "/api/v1/ops/client-ip-debug",
+        headers={"CF-Connecting-IP": "203.0.113.7", "X-Forwarded-For": "198.51.100.1, 10.0.0.1"},
+    )
+
+    body = response.json()
+    assert response.status_code == 200
+    assert response.headers["cache-control"] == "no-store"
+    assert body["rate_limit_key"] == "203.0.113.7"
+    assert body["headers"]["cf-connecting-ip"] == "203.0.113.7"
+    assert body["headers"]["x-forwarded-for"] == "198.51.100.1, 10.0.0.1"
+    assert body["headers"]["x-vercel-forwarded-for"] is None
+    assert set(body["headers"]) == {
+        "cf-connecting-ip",
+        "true-client-ip",
+        "x-forwarded-for",
+        "x-real-ip",
+        "x-vercel-forwarded-for",
+        "forwarded",
+    }
+
+
+async def test_client_ip_debug_reports_the_shared_bucket_without_a_cloudflare_ip(
+    offline_client: httpx.AsyncClient,
+) -> None:
+    response = await offline_client.get("/api/v1/ops/client-ip-debug")
+
+    assert response.json()["rate_limit_key"] == "unknown-client"
+
+
+async def test_client_ip_debug_stays_out_of_the_public_api_schema(
+    offline_client: httpx.AsyncClient,
+) -> None:
+    response = await offline_client.get("/openapi.json")
+
+    assert "/api/v1/ops/client-ip-debug" not in response.json()["paths"]

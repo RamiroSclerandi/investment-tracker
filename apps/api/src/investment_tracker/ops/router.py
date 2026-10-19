@@ -2,16 +2,26 @@ import asyncio
 from typing import Literal
 
 import structlog
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Response
 from pydantic import BaseModel
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
 from investment_tracker.core.errors import DomainError
+from investment_tracker.core.rate_limit import client_ip_key
 
 logger = structlog.get_logger()
 
 router = APIRouter(tags=["ops"])
+
+CLIENT_IP_HEADERS = (
+    "cf-connecting-ip",
+    "true-client-ip",
+    "x-forwarded-for",
+    "x-real-ip",
+    "x-vercel-forwarded-for",
+    "forwarded",
+)
 
 
 class DatabaseUnavailableError(DomainError):
@@ -43,3 +53,17 @@ async def readyz(request: Request) -> HealthStatus:
         logger.warning("readiness_check_failed", error_type=type(exc).__name__)
         raise DatabaseUnavailableError from None
     return HealthStatus(status="ready")
+
+
+class ClientIpDebug(BaseModel):
+    rate_limit_key: str
+    headers: dict[str, str | None]
+
+
+@router.get("/ops/client-ip-debug", include_in_schema=False)
+async def client_ip_debug(request: Request, response: Response) -> ClientIpDebug:
+    response.headers["Cache-Control"] = "no-store"
+    return ClientIpDebug(
+        rate_limit_key=client_ip_key(request),
+        headers={name: request.headers.get(name) for name in CLIENT_IP_HEADERS},
+    )
