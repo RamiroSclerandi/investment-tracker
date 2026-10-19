@@ -1,6 +1,7 @@
 import asyncio
 import os
 import secrets
+import warnings
 from collections.abc import AsyncIterator, Iterator
 from pathlib import Path
 
@@ -29,25 +30,13 @@ API_ROOT = Path(__file__).resolve().parents[2]
 WEB_BASE_URL = "https://app.example.com"
 APP_ROLE = "app_rw"
 # Supabase creates these roles and can expose a schema to them; plain Postgres has neither.
-SUPABASE_ROLES = "anon, authenticated, service_role"
+SUPABASE_ROLES = ("anon", "authenticated", "service_role")
 LAST_REVISION_BEFORE_REVOKE = "0004"
-CREATE_SUPABASE_ROLES = """
-    DO $$
-    DECLARE
-        role_name text;
-    BEGIN
-        FOREACH role_name IN ARRAY ARRAY['anon', 'authenticated', 'service_role'] LOOP
-            IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = role_name) THEN
-                EXECUTE format('CREATE ROLE %I NOLOGIN', role_name);
-            END IF;
-        END LOOP;
-    END
-    $$
-"""
+_GRANTEES = ", ".join(SUPABASE_ROLES)
 EXPOSE_APP_SCHEMA = (
-    f"GRANT USAGE ON SCHEMA app TO {SUPABASE_ROLES}",
-    f"GRANT ALL ON ALL TABLES IN SCHEMA app TO {SUPABASE_ROLES}",
-    f"ALTER DEFAULT PRIVILEGES IN SCHEMA app GRANT ALL ON TABLES TO {SUPABASE_ROLES}",
+    f"GRANT USAGE ON SCHEMA app TO {_GRANTEES}",
+    f"GRANT ALL ON ALL TABLES IN SCHEMA app TO {_GRANTEES}",
+    f"ALTER DEFAULT PRIVILEGES IN SCHEMA app GRANT ALL ON TABLES TO {_GRANTEES}",
 )
 
 
@@ -97,6 +86,35 @@ async def enable_app_role_login(owner_url: str, password: str) -> None:
     await owner.dispose()
 
 
+async def create_supabase_roles(owner_url: str) -> None:
+    owner = create_async_engine(owner_url)
+    async with owner.begin() as connection:
+        await connection.execute(
+            text("SELECT set_config('test.supabase_roles', :roles, true)"),
+            {"roles": ",".join(SUPABASE_ROLES)},
+        )
+        await connection.execute(
+            text(
+                """
+                DO $$
+                DECLARE
+                    role_name text;
+                BEGIN
+                    FOREACH role_name IN ARRAY
+                        string_to_array(current_setting('test.supabase_roles'), ',')
+                    LOOP
+                        IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = role_name) THEN
+                            EXECUTE format('CREATE ROLE %I NOLOGIN', role_name);
+                        END IF;
+                    END LOOP;
+                END
+                $$
+                """
+            )
+        )
+    await owner.dispose()
+
+
 async def run_as_owner(owner_url: str, *statements: str) -> None:
     owner = create_async_engine(owner_url)
     async with owner.begin() as connection:
@@ -127,12 +145,19 @@ def app_role_password() -> str:
 
 @pytest.fixture(scope="session")
 def owner_database_url(database_url: str, alembic_config: Config) -> str:
-    asyncio.run(run_as_owner(database_url, CREATE_SUPABASE_ROLES))
+    asyncio.run(create_supabase_roles(database_url))
     revision = asyncio.run(current_revision(database_url))
     # Exposing the schema before the revoke migration proves the migration revokes it.
-    if revision is None or revision <= LAST_REVISION_BEFORE_REVOKE:
+    # Revision ids are zero-padded sequence numbers, so they compare as integers.
+    if revision is None or int(revision) <= int(LAST_REVISION_BEFORE_REVOKE):
         command.upgrade(alembic_config, LAST_REVISION_BEFORE_REVOKE)
         asyncio.run(run_as_owner(database_url, *EXPOSE_APP_SCHEMA))
+    else:
+        warnings.warn(
+            "Database already migrated past the revoke: the Supabase revoke proof only runs"
+            " on a fresh database (CI).",
+            stacklevel=1,
+        )
     command.upgrade(alembic_config, "head")
     return database_url
 
