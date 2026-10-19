@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import secrets
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
@@ -60,6 +61,8 @@ VERIFY_TOKEN_TTL = timedelta(hours=24)
 RESET_TOKEN_TTL = timedelta(minutes=30)
 REFRESH_TOKEN_TTL = timedelta(days=30)
 SESSION_MAX_LIFETIME = timedelta(days=60)
+# A client whose refresh response was lost retries with the token it still holds.
+REFRESH_RETRY_GRACE = timedelta(seconds=30)
 USER_AGENT_MAX_LENGTH = 256
 
 logger = structlog.get_logger()
@@ -323,14 +326,18 @@ class SessionService:
         if token is None or token.revoked_at is not None or token.expires_at <= now:
             return None
         if token.rotated_at is not None:
-            logger.warning("refresh_token_reuse_detected", family_id=str(token.family_id))
-            await self._refresh_tokens.revoke_family(token.family_id, now)
-            return None
+            successor = unused_successor(family, token, now)
+            if successor is None:
+                logger.warning("refresh_token_reuse_detected", family_id=str(token.family_id))
+                await self._refresh_tokens.revoke_family(token.family_id, now)
+                return None
+            successor.revoked_at = now
         session_end = min(row.created_at for row in family) + SESSION_MAX_LIFETIME
         if user is None or not user.is_active or now >= session_end:
             await self._refresh_tokens.revoke_family(token.family_id, now)
             return None
-        token.rotated_at = now
+        # A retry keeps the first rotation time, so retries cannot stretch the grace window.
+        token.rotated_at = token.rotated_at or now
         expires_at = min(now + REFRESH_TOKEN_TTL, session_end)
         self._add_refresh_token(user.id, token.family_id, new_hash, expires_at, user_agent, ip)
         return user.id
@@ -362,6 +369,18 @@ class SessionService:
         self._refresh_tokens.add(
             new_refresh_token(user_id, family_id, token_hash, expires_at, user_agent, ip)
         )
+
+
+def unused_successor(
+    family: Sequence[RefreshToken], token: RefreshToken, now: datetime
+) -> RefreshToken | None:
+    if token.rotated_at is None or now - token.rotated_at > REFRESH_RETRY_GRACE:
+        return None
+    # Only the latest rotation may be retried, and only while the token it issued was never used.
+    if any(row.rotated_at is not None and row.rotated_at > token.rotated_at for row in family):
+        return None
+    live = [row for row in family if row.rotated_at is None and row.revoked_at is None]
+    return live[0] if len(live) == 1 else None
 
 
 def new_refresh_token(
