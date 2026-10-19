@@ -129,8 +129,23 @@ async def test_retrying_a_rotation_whose_response_was_lost_issues_a_fresh_token(
     assert _row(rows, old)["rotated_at"] == rotated_at
     assert _row(rows, lost)["revoked_at"] is not None
     assert _row(rows, fresh)["revoked_at"] is None
-    assert (await _refresh(client, lost)).status_code == 401
     assert (await _refresh(client, fresh)).status_code == 200
+
+
+async def test_presenting_the_token_a_retry_revoked_revokes_the_whole_family(
+    client: httpx.AsyncClient, engine: AsyncEngine
+) -> None:
+    user_id = await _create_user(engine)
+    old, _ = await _login_cookie(client)
+    lost = await _rotate(client, old)
+    fresh = await _rotate(client, old)
+
+    presented = await _refresh(client, lost)
+
+    assert presented.status_code == 401
+    assert (await _refresh(client, fresh)).status_code == 401
+    rows = await _refresh_tokens(engine, user_id)
+    assert all(row["revoked_at"] is not None for row in rows)
 
 
 async def test_reusing_a_rotated_token_after_the_grace_window_revokes_the_whole_family(
