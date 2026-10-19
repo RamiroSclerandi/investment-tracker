@@ -23,6 +23,27 @@ POSTGRES_IMAGE = os.environ.get("TEST_POSTGRES_IMAGE", "postgres:17")
 API_ROOT = Path(__file__).resolve().parents[2]
 WEB_BASE_URL = "https://app.example.com"
 APP_ROLE = "app_rw"
+# Supabase creates these roles and can expose a schema to them; plain Postgres has neither.
+SUPABASE_ROLES = "anon, authenticated, service_role"
+LAST_REVISION_BEFORE_REVOKE = "0004"
+CREATE_SUPABASE_ROLES = """
+    DO $$
+    DECLARE
+        role_name text;
+    BEGIN
+        FOREACH role_name IN ARRAY ARRAY['anon', 'authenticated', 'service_role'] LOOP
+            IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = role_name) THEN
+                EXECUTE format('CREATE ROLE %I NOLOGIN', role_name);
+            END IF;
+        END LOOP;
+    END
+    $$
+"""
+EXPOSE_APP_SCHEMA = (
+    f"GRANT USAGE ON SCHEMA app TO {SUPABASE_ROLES}",
+    f"GRANT ALL ON ALL TABLES IN SCHEMA app TO {SUPABASE_ROLES}",
+    f"ALTER DEFAULT PRIVILEGES IN SCHEMA app GRANT ALL ON TABLES TO {SUPABASE_ROLES}",
+)
 
 
 class RecordingEmailSender:
@@ -71,6 +92,24 @@ async def enable_app_role_login(owner_url: str, password: str) -> None:
     await owner.dispose()
 
 
+async def run_as_owner(owner_url: str, *statements: str) -> None:
+    owner = create_async_engine(owner_url)
+    async with owner.begin() as connection:
+        for statement in statements:
+            await connection.execute(text(statement))
+    await owner.dispose()
+
+
+async def current_revision(owner_url: str) -> str | None:
+    owner = create_async_engine(owner_url)
+    async with owner.connect() as connection:
+        revision = None
+        if await connection.scalar(text("SELECT to_regclass('public.alembic_version')")):
+            revision = await connection.scalar(text("SELECT version_num FROM alembic_version"))
+    await owner.dispose()
+    return revision
+
+
 def app_role_url(owner_url: str, password: str) -> str:
     url = make_url(owner_url).set(username=APP_ROLE, password=password)
     return url.render_as_string(hide_password=False)
@@ -83,6 +122,12 @@ def app_role_password() -> str:
 
 @pytest.fixture(scope="session")
 def owner_database_url(database_url: str, alembic_config: Config) -> str:
+    asyncio.run(run_as_owner(database_url, CREATE_SUPABASE_ROLES))
+    revision = asyncio.run(current_revision(database_url))
+    # Exposing the schema before the revoke migration proves the migration revokes it.
+    if revision is None or revision <= LAST_REVISION_BEFORE_REVOKE:
+        command.upgrade(alembic_config, LAST_REVISION_BEFORE_REVOKE)
+        asyncio.run(run_as_owner(database_url, *EXPOSE_APP_SCHEMA))
     command.upgrade(alembic_config, "head")
     return database_url
 

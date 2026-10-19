@@ -22,7 +22,7 @@ EXPECTED_PRIVILEGES = {
     "refresh_tokens": {"SELECT", "INSERT", "UPDATE"},
     "oauth_accounts": {"SELECT", "INSERT"},
 }
-EXPOSED_ROLES = ("anon", "authenticated")
+EXPOSED_ROLES = ("anon", "authenticated", "service_role")
 USER_ID_SETTING = text("SELECT current_setting('app.user_id', true)")
 
 
@@ -132,11 +132,25 @@ async def test_exposed_supabase_roles_and_public_have_no_access_to_the_app_schem
             )
         ).scalars()
         exposed_oids = set(exposed)
+        default_grantees = set(
+            (
+                await connection.execute(
+                    text(
+                        "SELECT DISTINCT acl.grantee FROM pg_default_acl d,"
+                        " aclexplode(d.defaclacl) acl"
+                        " WHERE d.defaclnamespace = 'app'::regnamespace"
+                    )
+                )
+            ).scalars()
+        )
 
+        assert len(exposed_oids) == len(EXPOSED_ROLES)
         assert exposed_oids.isdisjoint(grantees)
+        assert exposed_oids.isdisjoint(default_grantees)
         for oid in exposed_oids:
             usage = await connection.scalar(
-                text("SELECT has_schema_privilege(:role, 'app', 'USAGE')"), {"role": oid}
+                text("SELECT has_schema_privilege(CAST(:role AS oid), 'app', 'USAGE')"),
+                {"role": oid},
             )
             assert usage is False
     public_oid = 0
