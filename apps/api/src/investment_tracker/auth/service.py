@@ -332,10 +332,11 @@ class SessionService:
                 await self._revoke_reused_family(token, now)
             return None
         if token.rotated_at is not None:
-            successor = unused_successor(family, token, now)
+            successor = live_token_for_retry(family, token, now)
             if successor is None:
                 await self._revoke_reused_family(token, now)
                 return None
+            logger.info("refresh_token_retry_within_grace", family_id=str(token.family_id))
             successor.revoked_at = now
         session_end = min(row.created_at for row in family) + SESSION_MAX_LIFETIME
         if user is None or not user.is_active or now >= session_end:
@@ -380,9 +381,10 @@ class SessionService:
         )
 
 
-def unused_successor(
+def live_token_for_retry(
     family: Sequence[RefreshToken], token: RefreshToken, now: datetime
 ) -> RefreshToken | None:
+    # The family's only live token, which is what the latest rotation (or an earlier retry) issued.
     if token.rotated_at is None or now - token.rotated_at > REFRESH_RETRY_GRACE:
         return None
     # Only the latest rotation may be retried, and only while the token it issued was never used.

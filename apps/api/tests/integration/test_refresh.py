@@ -4,10 +4,12 @@ from datetime import UTC, datetime, timedelta
 
 import httpx
 import pytest
+import structlog
 from fastapi import FastAPI
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
 
+from investment_tracker.auth.service import REFRESH_RETRY_GRACE
 from investment_tracker.auth.tokens import hash_token
 from tests.integration.test_login import (
     CLIENT_IP,
@@ -119,9 +121,11 @@ async def test_retrying_a_rotation_whose_response_was_lost_issues_a_fresh_token(
     user_id = await _create_user(engine)
     old, _ = await _login_cookie(client)
     lost = await _rotate(client, old)
-    rotated_at = _row(await _refresh_tokens(engine, user_id), old)["rotated_at"]
+    rows = await _refresh_tokens(engine, user_id)
+    rotated_at, family_id = _row(rows, old)["rotated_at"], _row(rows, old)["family_id"]
 
-    retry = await _refresh(client, old)
+    with structlog.testing.capture_logs() as logs:
+        retry = await _refresh(client, old)
 
     assert retry.status_code == 200
     _, fresh, _ = _cookie_attributes(retry.headers["set-cookie"])
@@ -129,7 +133,27 @@ async def test_retrying_a_rotation_whose_response_was_lost_issues_a_fresh_token(
     assert _row(rows, old)["rotated_at"] == rotated_at
     assert _row(rows, lost)["revoked_at"] is not None
     assert _row(rows, fresh)["revoked_at"] is None
+    [event] = [log for log in logs if log["event"] == "refresh_token_retry_within_grace"]
+    assert event["family_id"] == str(family_id)
+    assert old not in str(logs)
     assert (await _refresh(client, fresh)).status_code == 200
+
+
+async def test_a_second_retry_within_the_grace_window_keeps_one_live_token(
+    client: httpx.AsyncClient, engine: AsyncEngine
+) -> None:
+    user_id = await _create_user(engine)
+    old, _ = await _login_cookie(client)
+    await _rotate(client, old)
+    await _rotate(client, old)
+
+    second_retry = await _refresh(client, old)
+
+    assert second_retry.status_code == 200
+    _, latest, _ = _cookie_attributes(second_retry.headers["set-cookie"])
+    rows = await _refresh_tokens(engine, user_id)
+    live = [row for row in rows if row["rotated_at"] is None and row["revoked_at"] is None]
+    assert [row["token_hash"] for row in live] == [hash_token(latest)]
 
 
 async def test_presenting_the_token_a_retry_revoked_revokes_the_whole_family(
@@ -154,7 +178,7 @@ async def test_reusing_a_rotated_token_after_the_grace_window_revokes_the_whole_
     user_id = await _create_user(engine)
     old, _ = await _login_cookie(client)
     newest = await _rotate(client, old)
-    await _age_rotation(engine, old, 31)
+    await _age_rotation(engine, old, int(REFRESH_RETRY_GRACE.total_seconds()) + 1)
 
     reused = await _refresh(client, old)
 
@@ -169,6 +193,7 @@ async def test_reusing_a_rotated_token_revokes_the_whole_family(
 ) -> None:
     user_id = await _create_user(engine)
     old, _ = await _login_cookie(client)
+    # Rotating the successor takes the old token out of the retry grace window.
     used = await _rotate(client, old)
     newest = await _rotate(client, used)
 
@@ -189,6 +214,7 @@ async def test_reuse_leaves_other_families_alone(
     await _create_user(engine)
     old, _ = await _login_cookie(client)
     other, _ = await _login_cookie(client)
+    # Rotating the successor takes the old token out of the retry grace window.
     await _rotate(client, await _rotate(client, old))
 
     await _refresh(client, old)
@@ -293,6 +319,9 @@ async def test_concurrent_refreshes_with_the_same_token_leave_exactly_one_live_t
     live = [row for row in rows if row["rotated_at"] is None and row["revoked_at"] is None]
     assert len(rows) == 3
     assert len(live) == 1
+    issued = [_cookie_attributes(response.headers["set-cookie"])[1] for response in responses]
+    [kept] = [token for token in issued if hash_token(token) == live[0]["token_hash"]]
+    assert (await _refresh(client, kept)).status_code == 200
 
 
 async def _logout(client: httpx.AsyncClient, cookie: str | None) -> httpx.Response:
