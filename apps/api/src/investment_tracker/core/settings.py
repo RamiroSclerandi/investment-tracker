@@ -46,8 +46,8 @@ class Settings(BaseSettings):
     proxy_shared_secret: SecretStr | None = Field(default=None, min_length=32)
     coingecko_api_key: SecretStr | None = None
     job_secret: SecretStr | None = Field(default=None, min_length=32)
-    market_open: time = time(11)
-    market_close: time = time(17)
+    market_open: time = time(10, 30)
+    market_close: time = time(18)
 
     @field_validator(
         "gmail_client_id",

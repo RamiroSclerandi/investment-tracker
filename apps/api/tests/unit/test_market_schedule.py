@@ -5,7 +5,7 @@ from hypothesis import given
 from hypothesis import strategies as st
 
 from investment_tracker.market.cadence import CADENCES, Cadence, Fetcher, due_fetchers, is_due
-from investment_tracker.market.calendar import MarketHours, is_business_day, is_market_open
+from investment_tracker.market.calendar import ART, MarketHours, is_business_day, is_market_open
 
 HOURS = MarketHours(open=time(11), close=time(17))
 MONDAY = date(2026, 10, 19)
@@ -134,3 +134,15 @@ def test_due_fetchers_follow_each_cadence_during_market_hours() -> None:
     }
 
     assert due_fetchers(NOON_ART, last, frozenset(), HOURS) == [Fetcher.CRYPTO_LIVE, Fetcher.MEP]
+
+
+@pytest.mark.parametrize(
+    ("art_time", "is_open"),
+    [(time(10, 29), False), (time(10, 30), True), (time(17, 59), True), (time(18), False)],
+)
+def test_the_default_market_hours_follow_the_byma_equity_session(
+    art_time: time, is_open: bool
+) -> None:
+    now = datetime.combine(MONDAY, art_time, tzinfo=ART)
+
+    assert is_market_open(now, frozenset(), MarketHours()) is is_open
