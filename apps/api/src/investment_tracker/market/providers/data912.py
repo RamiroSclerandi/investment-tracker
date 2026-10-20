@@ -114,24 +114,37 @@ class Data912Prices:
                 raise ProviderError(self.name, f"unknown data912 panel {panel[:40]!r}")
             by_panel[panel].add(symbol)
         points: dict[str, PricePoint] = {}
+        errors: list[ProviderError] = []
         for panel, symbols in by_panel.items():
-            url = f"{BASE_URL}/live/{panel}"
-            rows = await get_json(self._client, self.name, url, RAW_ROWS)
-            candidates = [raw for raw in rows if raw.get("symbol") in symbols]
-            fetched_at = self._now()
-            valid = [r for r in (valid_or_none(_LIVE_ROW, raw) for raw in candidates) if r]
-            require_valid_rows(self.name, url, len(candidates), len(valid))
-            for row in valid:
-                points[f"{panel}/{row.symbol}"] = PricePoint(
-                    symbol=row.symbol,
-                    price=row.c,
-                    currency=_currency(panel, row.symbol),
-                    fetched_at=fetched_at,
-                    bid=row.px_bid or None,
-                    ask=row.px_ask or None,
-                    price_basis=_price_basis(panel),
-                )
+            try:
+                points.update(await self._panel(panel, symbols))
+            except ProviderError as exc:
+                errors.append(exc)
+        if errors and not points:
+            raise errors[0]
         return points
+
+    async def _panel(self, panel: str, symbols: set[str]) -> dict[str, PricePoint]:
+        url = f"{BASE_URL}/live/{panel}"
+        rows = await get_json(self._client, self.name, url, RAW_ROWS)
+        candidates = [
+            raw for raw in rows if isinstance(sym := raw.get("symbol"), str) and sym in symbols
+        ]
+        fetched_at = self._now()
+        valid = [r for r in (valid_or_none(_LIVE_ROW, raw) for raw in candidates) if r]
+        require_valid_rows(self.name, url, len(candidates), len(valid))
+        return {
+            f"{panel}/{row.symbol}": PricePoint(
+                symbol=row.symbol,
+                price=row.c,
+                currency=_currency(panel, row.symbol),
+                fetched_at=fetched_at,
+                bid=row.px_bid or None,
+                ask=row.px_ask or None,
+                price_basis=_price_basis(panel),
+            )
+            for row in valid
+        }
 
     async def history(self, ref: str, start: date, end: date) -> list[PricePoint]:
         panel, _, symbol = ref.partition("/")

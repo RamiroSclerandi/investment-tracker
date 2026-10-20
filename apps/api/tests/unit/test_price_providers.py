@@ -1,6 +1,6 @@
 import json
 from collections.abc import Callable
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -97,6 +97,43 @@ async def test_kraken_loads_the_pair_map_once() -> None:
     await ticker.latest(["ETH"])
 
     assert [r.url.path for r in seen].count("/0/public/AssetPairs") == 1
+
+
+async def test_kraken_reloads_the_pair_map_after_an_hour() -> None:
+    seen: list[httpx.Request] = []
+    now = [NOW]
+    ticker = KrakenTicker(_client(_kraken_routes(), seen), now=lambda: now[0])
+
+    await ticker.latest(["BTC"])
+    now[0] = NOW + timedelta(minutes=59)
+    await ticker.latest(["BTC"])
+    now[0] = NOW + timedelta(hours=1)
+    await ticker.latest(["BTC"])
+
+    assert [r.url.path for r in seen].count("/0/public/AssetPairs") == 2
+
+
+async def test_kraken_reloads_the_pair_map_once_when_a_cached_pair_was_delisted() -> None:
+    listings = [_fixture("kraken_asset_pairs.json"), _fixture("kraken_asset_pairs.json")]
+    del listings[1]["result"]["XETHZUSD"]
+    seen: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        if request.url.path == "/0/public/AssetPairs":
+            return httpx.Response(200, json=listings.pop(0))
+        if "ETHUSD" in request.url.params["pair"]:
+            return httpx.Response(200, json={"error": ["EQuery:Unknown asset pair"], "result": {}})
+        return httpx.Response(200, json=_fixture("kraken_ticker.json"))
+
+    client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    ticker = KrakenTicker(client, now=_clock())
+    await ticker.latest(["BTC"])
+
+    points = await ticker.latest(["BTC", "ETH"])
+
+    assert list(points) == ["BTC"]
+    assert [r.url.path for r in seen].count("/0/public/AssetPairs") == 2
 
 
 async def test_kraken_has_no_history() -> None:
@@ -213,6 +250,30 @@ async def test_data912_reports_an_empty_side_of_the_book_as_missing() -> None:
         None,
         Decimal("85210.0"),
     )
+
+
+@pytest.mark.parametrize(
+    "broken_panel",
+    [
+        [{**r, "c": 0} for r in _fixture("live_arg_bonds.json")],
+        {"Error": "unavailable"},
+    ],
+)
+async def test_data912_keeps_the_other_panels_when_one_panel_fails(broken_panel: Any) -> None:
+    client = _client({**_data912_routes(), "/live/arg_bonds": broken_panel})
+
+    points = await Data912Prices(client, now=_clock()).latest(["arg_bonds/AL30", "usa_stocks/AAPL"])
+
+    assert list(points) == ["usa_stocks/AAPL"]
+
+
+async def test_data912_skips_a_row_whose_symbol_is_not_text() -> None:
+    rows = [{"symbol": ["AL30"], "c": 1}, *_fixture("live_arg_bonds.json")]
+    client = _client({"/live/arg_bonds": rows})
+
+    points = await Data912Prices(client, now=_clock()).latest(["arg_bonds/AL30"])
+
+    assert list(points) == ["arg_bonds/AL30"]
 
 
 async def test_data912_rejects_an_unknown_panel() -> None:

@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import date
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
@@ -26,6 +26,12 @@ BASE_URL = "https://api.kraken.com/0/public"
 NAME = "kraken"
 USD_QUOTES = frozenset({"USD", "ZUSD"})
 SYMBOL_ALIASES = {"XBT": "BTC", "XDG": "DOGE"}
+PAIRS_TTL = timedelta(hours=1)
+UNKNOWN_PAIR = "EQuery:Unknown asset pair"
+
+
+class _UnknownPairError(ProviderError):
+    pass
 
 
 class _Pair(BaseModel):
@@ -64,8 +70,16 @@ class KrakenTicker:
         self._client = client
         self._now = now
         self._pairs: dict[str, _UsdPair] | None = None
+        self._pairs_loaded_at = datetime.min.replace(tzinfo=UTC)
 
     async def latest(self, refs: Sequence[str]) -> dict[str, PricePoint]:
+        try:
+            return await self._quote(refs)
+        except _UnknownPairError:
+            self._pairs = None
+            return await self._quote(refs)
+
+    async def _quote(self, refs: Sequence[str]) -> dict[str, PricePoint]:
         pairs = await self._usd_pairs()
         wanted = {pairs[ref].key: ref for ref in refs if ref in pairs}
         if not wanted:
@@ -93,8 +107,10 @@ class KrakenTicker:
         raise ProviderError(NAME, "Kraken serves live quotes only; history comes from CoinGecko")
 
     async def _usd_pairs(self) -> dict[str, _UsdPair]:
-        if self._pairs is None:
+        now = self._now()
+        if self._pairs is None or now - self._pairs_loaded_at >= PAIRS_TTL:
             listing = await self._get(f"{BASE_URL}/AssetPairs", None)
+            self._pairs_loaded_at = now
             self._pairs = {}
             for key, raw in listing.result.items():
                 pair = valid_or_none(_PAIR, raw)
@@ -106,6 +122,8 @@ class KrakenTicker:
 
     async def _get(self, url: str, params: dict[str, str] | None) -> _Envelope:
         payload = await get_json(self._client, NAME, url, _ENVELOPE, params=params)
+        if UNKNOWN_PAIR in payload.error:
+            raise _UnknownPairError(NAME, f"{url} returned errors: {', '.join(payload.error)}")
         if payload.error:
             raise ProviderError(NAME, f"{url} returned errors: {', '.join(payload.error)}")
         return payload
