@@ -9,6 +9,7 @@ from pydantic import SecretStr
 from investment_tracker.core.settings import Settings
 from investment_tracker.main import create_app
 from investment_tracker.market.cadence import Fetcher
+from investment_tracker.market.calendar import MarketHours
 from investment_tracker.market.events import PriceEvents
 from investment_tracker.market.models import JobRunStatus
 from investment_tracker.market.router import get_tick_service
@@ -126,3 +127,11 @@ def test_a_failing_price_handler_does_not_stop_the_others() -> None:
     events.publish(asset_ids)
 
     assert received == [asset_ids]
+
+
+def test_the_settings_default_to_the_calendar_market_hours() -> None:
+    settings = Settings(
+        database_url=SecretStr("postgresql+asyncpg://user:pass@localhost:5432/test")
+    )
+
+    assert MarketHours(settings.market_open, settings.market_close) == MarketHours()

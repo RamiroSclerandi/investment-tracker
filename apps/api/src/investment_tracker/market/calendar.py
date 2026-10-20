@@ -8,8 +8,8 @@ ART = timezone(timedelta(hours=-3), "ART")
 
 @dataclass(frozen=True)
 class MarketHours:
-    open: time = time(11)
-    close: time = time(17)
+    open: time = time(10, 30)
+    close: time = time(18)
 
     def __post_init__(self) -> None:
         if self.open >= self.close:
