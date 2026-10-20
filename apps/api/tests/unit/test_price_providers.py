@@ -136,6 +136,15 @@ async def test_kraken_reloads_the_pair_map_once_when_a_cached_pair_was_delisted(
     assert [r.url.path for r in seen].count("/0/public/AssetPairs") == 2
 
 
+async def test_kraken_fails_the_batch_when_the_reloaded_map_still_has_the_rejected_pair() -> None:
+    seen: list[httpx.Request] = []
+    client = _client(_kraken_routes({"error": ["EQuery:Unknown asset pair"], "result": {}}), seen)
+
+    with pytest.raises(ProviderError, match="Unknown asset pair"):
+        await KrakenTicker(client, now=_clock()).latest(["BTC", "ETH"])
+    assert [r.url.path for r in seen].count("/0/public/Ticker") == 2
+
+
 async def test_kraken_has_no_history() -> None:
     with pytest.raises(ProviderError, match="kraken"):
         await KrakenTicker(_client({}), now=_clock()).history("BTC", date(2026, 1, 1), NOW.date())

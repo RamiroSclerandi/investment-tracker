@@ -36,7 +36,9 @@ from investment_tracker.core.logging import configure_logging
 from investment_tracker.core.rate_limit import register_rate_limiting
 from investment_tracker.core.request_id import RequestIdMiddleware
 from investment_tracker.core.settings import Settings, load_jwt_private_key
+from investment_tracker.market.events import PriceEvents
 from investment_tracker.market.providers.registry import build_registry, create_http_client
+from investment_tracker.market.router import router as market_router
 from investment_tracker.ops.router import router as ops_router
 
 API_PREFIX = "/api/v1"
@@ -102,6 +104,7 @@ def create_app(
         http_client = create_http_client()
         app.state.http_client = http_client
         app.state.providers = build_registry(http_client, settings.coingecko_api_key)
+        app.state.price_events = PriceEvents()
         try:
             yield
         finally:
@@ -139,6 +142,7 @@ def create_app(
     api_router = APIRouter(prefix=API_PREFIX)
     api_router.include_router(ops_router)
     api_router.include_router(auth_router)
+    api_router.include_router(market_router)
     app.include_router(api_router)
     return app
 
