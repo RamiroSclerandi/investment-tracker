@@ -41,12 +41,14 @@ def test_the_market_is_closed_on_a_holiday() -> None:
 
 
 def test_the_art_date_decides_the_business_day_near_utc_midnight() -> None:
-    late_hours = MarketHours(time(22), time(23))
     friday_night_art = datetime(2026, 10, 24, 1, 30, tzinfo=UTC)
-    sunday_night_art = datetime(2026, 10, 19, 1, 30, tzinfo=UTC)
+    monday_early_art = datetime(2026, 10, 19, 3, 30, tzinfo=UTC)
 
-    assert is_market_open(friday_night_art, frozenset(), late_hours)
-    assert not is_market_open(sunday_night_art, frozenset(), late_hours)
+    assert is_market_open(friday_night_art, frozenset(), MarketHours(time(22), time(23)))
+    assert is_market_open(monday_early_art, frozenset(), MarketHours(time(0), time(1)))
+    assert not is_market_open(
+        monday_early_art, frozenset({date(2026, 10, 19)}), MarketHours(time(0), time(1))
+    )
 
 
 def test_a_naive_instant_is_rejected() -> None:
@@ -67,6 +69,25 @@ def test_a_tick_slightly_early_still_runs_a_one_minute_fetcher() -> None:
     last = NOON_ART - timedelta(seconds=58)
 
     assert is_due(LIVE, NOON_ART, last, is_open=True)
+
+
+@pytest.mark.parametrize(
+    ("fetcher", "boundary"),
+    [(Fetcher.AR_LIVE, timedelta(seconds=45)), (Fetcher.MEP, timedelta(minutes=4, seconds=45))],
+)
+def test_a_fetcher_becomes_due_exactly_at_its_cadence_minus_the_slack(
+    fetcher: Fetcher, boundary: timedelta
+) -> None:
+    cadence = CADENCES[fetcher]
+
+    assert is_due(cadence, NOON_ART, NOON_ART - boundary, is_open=True)
+    assert not is_due(
+        cadence, NOON_ART, NOON_ART - boundary + timedelta(microseconds=1), is_open=True
+    )
+
+
+def test_only_crypto_is_due_on_a_weekday_holiday_in_market_hours() -> None:
+    assert due_fetchers(NOON_ART, {}, frozenset({MONDAY}), HOURS) == [Fetcher.CRYPTO_LIVE]
 
 
 def test_a_fetcher_is_not_due_well_before_its_cadence() -> None:

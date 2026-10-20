@@ -1,3 +1,4 @@
+from datetime import time
 from typing import Literal, Self
 from urllib.parse import urlsplit
 
@@ -44,12 +45,16 @@ class Settings(BaseSettings):
     gmail_sender: EmailStr | None = None
     proxy_shared_secret: SecretStr | None = Field(default=None, min_length=32)
     coingecko_api_key: SecretStr | None = None
+    job_secret: SecretStr | None = Field(default=None, min_length=32)
+    market_open: time = time(11)
+    market_close: time = time(17)
 
     @field_validator(
         "gmail_client_id",
         "gmail_client_secret",
         "gmail_refresh_token",
         "gmail_sender",
+        "job_secret",
         mode="before",
     )
     @classmethod
@@ -123,6 +128,12 @@ class Settings(BaseSettings):
                 "WEB_BASE_URL must be the public https origin of the web app in production,"
                 " e.g. https://example.vercel.app."
             )
+        return self
+
+    @model_validator(mode="after")
+    def validate_market_hours(self) -> Self:
+        if self.market_open >= self.market_close:
+            raise ValueError("MARKET_OPEN must be earlier than MARKET_CLOSE.")
         return self
 
     @model_validator(mode="after")

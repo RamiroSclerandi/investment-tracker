@@ -32,3 +32,7 @@ services:
         sync: false
       - key: GMAIL_SENDER
         sync: false
+      - key: JOB_SECRET
+        sync: false
+      - key: COINGECKO_API_KEY
+        sync: false
