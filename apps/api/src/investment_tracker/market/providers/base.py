@@ -2,7 +2,7 @@ import asyncio
 import enum
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
-from datetime import UTC, date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from typing import Annotated, Any, Protocol
 
@@ -10,8 +10,8 @@ import httpx
 from pydantic import Field, StringConstraints, TypeAdapter, ValidationError
 
 from investment_tracker.auth.models import Currency
+from investment_tracker.market.calendar import ART
 
-ART = timezone(timedelta(hours=-3), "ART")
 MAX_RESPONSE_BYTES = 2 * 1024 * 1024
 MAX_ITEMS = 10_000
 MAX_DETAIL_LENGTH = 200
